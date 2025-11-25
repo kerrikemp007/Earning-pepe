@@ -15,9 +15,8 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
-    <!-- IMPORTANT: PUT YOUR MONETAG SCRIPT SRC HERE -->
-    <!-- It usually looks like: <script src='//libtl.com/sdk.js' data-zone='10233960' data-sdk='show_10233960'></script>
-    <!-- If you don't add the script source line from Monetag dashboard, the ads won't load. -->
+    <!-- MONETAG ADS SCRIPT -->
+    <script src='//libtl.com/sdk.js' data-zone='10233960' data-sdk='show_10233960'></script>
 
     <style>
         :root {
@@ -125,6 +124,7 @@
         .task-item { display: flex; justify-content: space-between; align-items: center; }
         .history-item { border-bottom: 1px solid #333; padding: 10px 0; font-size: 13px; display: flex; justify-content: space-between; }
         
+        /* Spin Wheel Animation Placeholder */
         .spin-container { text-align: center; margin: 20px 0; }
         .fa-spinner { font-size: 60px; color: var(--primary); }
 
@@ -151,14 +151,14 @@
 </div>
 
 <div id="main-content" class="container">
-    
+
     <!-- 1. HOME -->
     <div id="home" class="page active">
         <h3 class="mb-3">Earn Money</h3>
         
         <div class="card">
             <h4><i class="fas fa-play-circle" style="color: #e74c3c;"></i> Watch Video</h4>
-            <p style="font-size:13px; color:#ccc;">Watch a short ad to earn rewards.</p>
+            <p style="font-size:13px; color:#ccc;">Watch a short ad to earn rewards instantly.</p>
             <button class="btn" onclick="watchAd()" id="btn-ad">Watch Ad (+$<span id="ad-reward-disp">0</span>)</button>
         </div>
 
@@ -237,7 +237,6 @@
             </div>
         </div>
     </div>
-
 </div>
 
 <!-- Bottom Nav -->
@@ -275,12 +274,14 @@
 
     // 2. TELEGRAM INIT & VARIABLES
     const tg = window.Telegram.WebApp;
-    tg.expand();
+    tg.expand(); // Make full screen
 
+    // Use Telegram ID if available, otherwise random for testing in browser
     const userId = (tg.initDataUnsafe && tg.initDataUnsafe.user) 
         ? tg.initDataUnsafe.user.id.toString() 
         : "test_user_" + Math.floor(Math.random() * 1000);
 
+    // App State
     let settings = {};
     let userData = {};
     let currentMathAns = 0;
@@ -288,12 +289,14 @@
     // 3. STARTUP LOGIC
     document.addEventListener("DOMContentLoaded", () => {
         document.getElementById('user-id').innerText = userId;
-        document.getElementById('ref-link').value = `https://t.me/YourBotName?start=${userId}`;
+        document.getElementById('ref-link').value = `https://t.me/YourBotName?start=${userId}`; // REPLACE YourBotName
 
+        // 3.1 Load Global Settings
         db.ref('settings').on('value', snap => {
             if(snap.exists()) {
                 settings = snap.val();
             } else {
+                // Default Fallback
                 settings = {
                     adReward: 0.001, mathReward: 0.0005, minWithdraw: 0.5, 
                     referReward: 0.05, dailySpin: 10, maintenance: "false", 
@@ -304,6 +307,7 @@
             checkMaintenance();
         });
 
+        // 3.2 Load User Data
         db.ref('users/' + userId).on('value', snap => {
             if(snap.exists()) {
                 userData = snap.val();
@@ -318,11 +322,13 @@
             document.getElementById('loading-screen').style.display = 'none';
         });
 
+        // 3.3 Load History & Tasks
         loadHistory();
         loadTasks();
     });
 
     function createNewUser() {
+        // Check for referral param
         const startParam = tg.initDataUnsafe.start_param || null;
         let referrer = (startParam && startParam !== userId) ? startParam : "system";
 
@@ -337,6 +343,7 @@
 
         db.ref('users/' + userId).set(newUser);
 
+        // Reward Referrer
         if(referrer !== "system") {
             db.ref('users/' + referrer).once('value', s => {
                 if(s.exists()) {
@@ -349,6 +356,7 @@
         }
     }
 
+    // 4. UI UPDATES
     function updateUISettings() {
         document.getElementById('ad-reward-disp').innerText = settings.adReward;
         document.getElementById('math-reward-disp').innerText = settings.mathReward;
@@ -371,14 +379,19 @@
 
     function updateUserUI() {
         document.getElementById('user-balance').innerText = parseFloat(userData.balance).toFixed(4);
+        
+        // Check spin reset
         let today = new Date().toDateString();
         if(userData.lastSpinDate !== today) {
             db.ref('users/' + userId).update({ spinsToday: 0, lastSpinDate: today });
             userData.spinsToday = 0;
         }
+        
         let spinsLeft = (settings.dailySpin || 10) - (userData.spinsToday || 0);
         document.getElementById('spin-left').innerText = Math.max(0, spinsLeft);
     }
+
+    // 5. FUNCTIONALITIES
 
     // Navigation
     window.nav = function(pageId, btn) {
@@ -389,56 +402,34 @@
         if(pageId === 'games') generateMath();
     }
 
-    /* =========================================
-       UPDATED ADS LOGIC (MONETAG INTEGRATION)
-       ========================================= */
+    // --- MONETAG AD INTEGRATION START ---
     window.watchAd = function() {
         let btn = document.getElementById('btn-ad');
         
-        // Prevent double clicking
-        if(btn.disabled) return;
-
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading Ad...';
-
-        // 1. Try to call the Monetag function
-        try {
-            if (typeof show_10233960 === 'function') {
-                show_10233960({
-                    type: 'inApp',
-                    inAppSettings: {
-                        frequency: 2,
-                        capping: 0.1,
-                        interval: 30,
-                        timeout: 5,
-                        everyPage: false
-                    }
-                });
-            } else {
-                console.error("Monetag function not found. Did you add the script in <head>?");
-                // Optional: Alert user if the ad script didn't load
-                // alert("Ad system is loading, please wait..."); 
-            }
-        } catch (e) {
-            console.error("Ad Error: ", e);
-        }
-
-        // 2. Wait for Ad to Finish (Simulated)
-        // Web Interstitials don't always give a 'close' callback to JS for security.
-        // We assume if they clicked, the ad opened. We wait 15 seconds to give the reward.
-        
-        setTimeout(() => {
-            // Reward the user
-            addBalance(settings.adReward, "Watched Ad");
+        // 1. Check if the Monetag function is ready (generated by the SDK)
+        if (typeof show_10233960 === 'function') {
             
-            // Reset Button
-            btn.disabled = false;
-            btn.innerText = `Watch Ad (+$${settings.adReward})`;
-            alert("Reward Added Successfully!");
-        }, 15000); // 15 Seconds delay before giving reward
-    }
+            btn.disabled = true;
+            btn.innerText = "Loading Ad...";
 
-    // Spin Logic
+            // 2. Call the function defined in data-sdk='show_10233960'
+            show_10233960().then(() => {
+                // 3. This block runs after the user watches/closes the ad
+                addBalance(settings.adReward, "Watched Ad");
+                
+                btn.disabled = false;
+                btn.innerText = `Watch Ad (+$${settings.adReward})`;
+                alert("Reward Added!");
+            });
+
+        } else {
+            // Fallback if adblocker is on or connection is slow
+            alert("Ads are loading or blocked. Please wait or check your settings.");
+        }
+    }
+    // --- MONETAG AD INTEGRATION END ---
+
+    // Spin
     window.doSpin = function() {
         let maxSpins = settings.dailySpin || 10;
         if((userData.spinsToday || 0) >= maxSpins) return alert("Daily limit reached!");
@@ -450,6 +441,8 @@
         setTimeout(() => {
             document.getElementById('spin-animation').style.display = "none";
             document.getElementById('spin-result').style.display = "block";
+            
+            // Random win between 0.001 and 0.010
             let win = (Math.random() * (0.01 - 0.001) + 0.001).toFixed(4);
             document.getElementById('spin-result').innerText = `$${win}`;
             
@@ -462,7 +455,7 @@
         }, 1500);
     }
 
-    // Math Logic
+    // Math
     function generateMath() {
         let a = Math.floor(Math.random() * 20);
         let b = Math.floor(Math.random() * 20);
@@ -485,7 +478,7 @@
         }
     }
 
-    // Wallet Logic
+    // Wallet
     window.submitDeposit = function() {
         let amt = document.getElementById('dep-amount').value;
         let hash = document.getElementById('dep-hash').value;
@@ -512,6 +505,7 @@
         if(amt < min) return alert(`Minimum withdraw is $${min}`);
         if(amt > userData.balance) return alert("Insufficient Balance");
 
+        // Deduct immediately
         db.ref('users/' + userId).update({ balance: userData.balance - amt });
 
         db.ref('withdrawals').push({
@@ -526,7 +520,7 @@
         alert("Withdrawal requested successfully!");
     }
 
-    // Task Logic
+    // Tasks
     function loadTasks() {
         db.ref('tasks').on('value', s => {
             const list = document.getElementById('task-list');
@@ -536,6 +530,8 @@
             s.forEach(child => {
                 let task = child.val();
                 let tId = child.key;
+                
+                // Check if done
                 let isDone = (userData.tasks && userData.tasks[tId]);
                 
                 let btnHtml = isDone 
@@ -555,7 +551,8 @@
     }
 
     window.doTask = function(tId, url, reward) {
-        tg.openLink(url);
+        tg.openLink(url); // Opens in external browser
+        // Simplified check - assumes they did it. In production, use callbacks/timers.
         setTimeout(() => {
             if(confirm("Did you complete the task?")) {
                 db.ref(`users/${userId}/tasks/${tId}`).set(true);
@@ -585,6 +582,7 @@
             list.innerHTML = "";
             if(!s.exists()) { list.innerHTML = "<p style='text-align:center; opacity:0.5;'>No history yet.</p>"; return; }
             
+            // Show newest first
             let items = [];
             s.forEach(c => items.push(c.val()));
             items.reverse().forEach(v => {
@@ -611,5 +609,6 @@
     }
 
 </script>
+
 </body>
 </html>
