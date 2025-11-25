@@ -1,112 +1,503 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Earning Technology</title>
+    <title>PEPE Earning</title>
+
+
+<!-- 1. Monetag SDK Script -->
+<script src='//libtl.com/sdk.js' data-zone='10233960' data-sdk='show_10233960'></script>
+
+<!-- 2. Telegram Web App Script -->
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+<style>
+    /* --- GLOBAL VARIABLES & RESET --- */
+    :root {
+        --bg-color: #121212;
+        --card-bg: #1e1e1e;
+        --text-color: #ffffff;
+        --hint-color: #8a8a8a;
+        --accent-color: #007bff;
+        --border-color: #333333;
+        --success-color: #28a745;
+        --danger-color: #dc3545;
+    }
+
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        margin: 0;
+        padding: 20px 16px 90px 16px; /* Padding for bottom nav */
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        -webkit-font-smoothing: antialiased;
+    }
+
+    h1, h2, h3, p { margin: 0; }
+    button { outline: none; -webkit-tap-highlight-color: transparent; }
+
+    /* --- LAYOUT UTILS --- */
+    .container { width: 100%; max-width: 480px; margin: 0 auto; }
+    .view { display: none; animation: fadeIn 0.3s ease; }
+    #home-view { display: block; }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* --- HEADERS --- */
+    .header { text-align: center; margin-bottom: 30px; margin-top: 10px; }
+    .header h1 { font-size: 32px; font-weight: 700; margin-bottom: 8px; }
+    .header p { color: var(--hint-color); font-size: 16px; }
+
+    /* --- CARDS --- */
+    .card {
+        background-color: var(--card-bg);
+        border-radius: 12px;
+        padding: 24px 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    /* --- SPECIFIC REFERRAL STYLING (MATCHING SCREENSHOT) --- */
+    .card-title-center {
+        text-align: center;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--hint-color);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 20px;
+    }
+
+    .stats-row {
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+    }
+
+    .stat-item { text-align: center; }
+    .stat-value { font-size: 28px; font-weight: 600; color: #fff; margin-bottom: 4px; }
+    .stat-label { font-size: 14px; color: var(--hint-color); }
+
+    .referral-desc {
+        text-align: center;
+        font-size: 15px;
+        line-height: 1.5;
+        color: #e0e0e0;
+        margin-bottom: 20px;
+    }
+
+    .link-box {
+        background-color: rgba(255, 255, 255, 0.03);
+        border: 1px dashed var(--hint-color);
+        border-radius: 8px;
+        padding: 16px;
+        font-size: 15px;
+        color: #fff;
+        text-align: left; /* Matches screenshot left alignment in box */
+        margin-bottom: 15px;
+        word-break: break-all;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
     
-    <!-- 1. Monetage SDK Script -->
-    <script src='//libtl.com/sdk.js' data-zone='10233960' data-sdk='show_10233960'></script>
+    .link-box:active { background-color: rgba(255, 255, 255, 0.1); }
 
-    <!-- 2. Telegram Web App Script -->
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    .footer-note {
+        font-size: 12px;
+        color: var(--hint-color);
+        text-align: center;
+        line-height: 1.4;
+        padding: 0 10px;
+    }
 
-    <style>
-        /* --- GLOBAL VARIABLES & RESET --- */
-        :root {
-            --bg-color: #121212;
-            --card-bg: #1e1e1e;
-            --text-color: #ffffff;
-            --hint-color: #8a8a8a;
-            --accent-color: #007bff;
-            --border-color: #333333;
-            --success-color: #28a745;
-            --danger-color: #dc3545;
-        }
+    /* --- BUTTONS --- */
+    .btn {
+        width: 100%;
+        padding: 16px;
+        font-size: 17px;
+        font-weight: 600;
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        background: #007bff;
+        color: #fff;
+        margin-bottom: 15px;
+        transition: transform 0.1s;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn:disabled { background: #3a3a3a; color: #777; cursor: not-allowed; }
+    #mainWithdrawBtn { background: #28a745; }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            margin: 0;
-            padding: 20px 16px 90px 16px; /* Padding for bottom nav */
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            -webkit-font-smoothing: antialiased;
-        }
+    /* --- INPUTS --- */
+    .input-group label { display: block; color: var(--hint-color); font-size: 14px; margin-bottom: 8px; }
+    .input-group input {
+        width: 100%; padding: 14px; border-radius: 10px; border: 1px solid var(--border-color);
+        background: #2c2c2c; color: #fff; font-size: 16px; box-sizing: border-box;
+    }
+    .input-group input:focus { border-color: var(--accent-color); }
 
-        h1, h2, h3, p { margin: 0; }
-        button { outline: none; -webkit-tap-highlight-color: transparent; }
+    /* --- BOTTOM NAVIGATION --- */
+    .footer-nav {
+        position: fixed; bottom: 0; left: 0; right: 0;
+        background-color: var(--card-bg);
+        display: flex; justify-content: space-around;
+        padding: 10px 0;
+        border-top: 1px solid var(--border-color);
+        z-index: 100;
+        padding-bottom: max(10px, env(safe-area-inset-bottom));
+    }
+    .nav-btn {
+        background: none; border: none; color: var(--hint-color);
+        display: flex; flex-direction: column; align-items: center;
+        font-size: 11px; gap: 4px;
+    }
+    .nav-btn svg { width: 24px; height: 24px; }
+    .nav-btn.active { color: var(--accent-color); }
 
-        /* --- LAYOUT UTILS --- */
-        .container { width: 100%; max-width: 480px; margin: 0 auto; }
-        .view { display: none; animation: fadeIn 0.3s ease; }
-        #home-view { display: block; }
+    /* --- TOAST NOTIFICATIONS --- */
+    .status-message {
+        position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+        background: #333; padding: 12px 20px; border-radius: 30px;
+        font-size: 14px; display: none; z-index: 200; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        white-space: nowrap;
+    }
+    .status-message.success { color: #4cd964; border: 1px solid #4cd964; }
+    .status-message.error { color: #ff3b30; border: 1px solid #ff3b30; }
 
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    /* --- ADMIN PANEL --- */
+    .admin-panel { display: none; margin-top: 20px; padding: 15px; border: 1px solid #ffc107; border-radius: 8px; color: #ffc107; font-size: 12px; }
+</style>
+</head>
+<body>
 
-        /* --- HEADERS --- */
-        .header { text-align: center; margin-bottom: 30px; margin-top: 10px; }
-        .header h1 { font-size: 32px; font-weight: 700; margin-bottom: 8px; }
-        .header p { color: var(--hint-color); font-size: 16px; }
+<!-- Secondary Ad Script -->
+<script type='text/javascript' src='//pl26604097.profitableratecpm.com/0f/56/94/0f5694f9b53dd9db6b20e82218735b99.js'></script>
 
-        /* --- CARDS --- */
-        .card {
-            background-color: var(--card-bg);
-            border-radius: 12px;
-            padding: 24px 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-        }
-
-        /* --- SPECIFIC REFERRAL STYLING (MATCHING SCREENSHOT) --- */
-        .card-title-center {
-            text-align: center;
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--hint-color);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 20px;
-        }
-
-        .stats-row {
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-        }
-
-        .stat-item { text-align: center; }
-        .stat-value { font-size: 28px; font-weight: 600; color: #fff; margin-bottom: 4px; }
-        .stat-label { font-size: 14px; color: var(--hint-color); }
-
-        .referral-desc {
-            text-align: center;
-            font-size: 15px;
-            line-height: 1.5;
-            color: #e0e0e0;
-            margin-bottom: 20px;
-        }
-
-        .link-box {
-            background-color: rgba(255, 255, 255, 0.03);
-            border: 1px dashed var(--hint-color);
-            border-radius: 8px;
-            padding: 16px;
-            font-size: 15px;
-            color: #fff;
-            text-align: left; /* Matches screenshot left alignment in box */
-            margin-bottom: 15px;
-            word-break: break-all;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
+<div class="container">
+    
+    <!-- 1. HOME VIEW -->
+    <div id="home-view" class="view">
+        <div class="header">
+            <h1>PEPE Earning</h1>
+            <p>Watch Ads and Earn USDT</p>
+        </div>
         
-        .link-box:active { background-color: rgba(255, 255, 255, 0.1); }
+        <div class="card">
+            <div class="card-title-center">CURRENT BALANCE</div>
+            <div class="stats-row" style="justify-content: center;">
+                <div class="stat-value" id="balanceDisplay">USDT 0.00</div>
+            </div>
+            <br>
+            <div class="stats-row">
+                <div class="stat-item">
+                    <div class="stat-value" id="adCountDisplay">0</div>
+                    <div class="stat-label">Total Watched</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="dailyAdCountDisplay">0 / 1000</div>
+                    <div class="stat-label">Today's Ads</div>
+                </div>
+            </div>
+        </div>
 
-        .footer-note {
-            font-size: 12px;
-            color: var(--hint-color);
-            text-align: center;
-            line-height: 1.4;
+        <button class="btn" id="rewardedBtn">Watch Ad (+0.01 USDT)</button>
+        <button class="btn" id="mainWithdrawBtn" disabled>Reach 10.00 USDT to Withdraw</button>
+        
+        <div class="admin-panel" id="adminPanel">
+            <h3>👑 Admin Panel</h3><p id="userInfo"></p>
+        </div>
+    </div>
+
+    <!-- 2. WITHDRAW VIEW -->
+    <div id="withdraw-view" class="view">
+        <div class="header">
+            <h1>Withdraw</h1>
+            <p>Request your earnings</p>
+        </div>
+        <div class="card">
+            <div class="card-title-center">AVAILABLE BALANCE</div>
+            <div class="stats-row" style="justify-content: center;">
+                <div class="stat-value" id="withdrawBalanceDisplay">USDT 0.00</div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="input-group">
+                <label>USDT (TRC20) Address</label>
+                <input type="text" id="paymentAddress" placeholder="Enter T... address">
+            </div>
+            <br>
+            <button class="btn" id="finalWithdrawBtn" disabled>Withdraw Request</button>
+        </div>
+    </div>
+    
+    <!-- 3. REFERRAL VIEW (FIXED TO MATCH PICTURE) -->
+    <div id="referral-view" class="view">
+        <div class="header">
+            <h1>Referrals</h1>
+            <p>Invite friends and earn more!</p>
+        </div>
+
+        <!-- Stats Card -->
+        <div class="card">
+            <div class="card-title-center">YOUR REFERRAL STATS</div>
+            <div class="stats-row">
+                <div class="stat-item">
+                    <div class="stat-value" id="referralCountDisplay">0</div>
+                    <div class="stat-label">Total Referrals</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="referralBonusDisplay">USDT 0.00</div>
+                    <div class="stat-label">Referral Earnings</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Link Card -->
+        <div class="card">
+            <div class="card-title-center">YOUR REFERRAL LINK</div>
+            <p class="referral-desc">
+                Share this link with your friends. You get 0.5 USDT for each verified friend who joins!
+            </p>
+            
+            <!-- The Dashed Box -->
+            <div class="link-box" id="referralLink">
+                Referral link needs Bot Configuration.
+            </div>
+
+            <p class="footer-note">
+                Note: Referral rewards require backend processing and will be credited to your balance after verification.
+            </p>
+        </div>
+    </div>
+
+    <div class="status-message" id="statusMessage"></div>
+</div>
+
+<!-- Footer Navigation -->
+<footer class="footer-nav">
+    <button class="nav-btn active" id="navHome">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+        <span>Home</span>
+    </button>
+    <button class="nav-btn" id="navWithdraw">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 9.5h-4v-5h-2v5H7l5 5 5-5zm-5 7a6 6 0 1 1 0-12 6 6 0 0 1 0 12z"/></svg>
+        <span>Withdraw</span>
+    </button>
+    <button class="nav-btn" id="navRefer">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V18h14v-1.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V18h6v-1.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+        <span>Referrals</span>
+    </button>
+</footer>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Telegram WebApp Object
+        const tg = window.Telegram.WebApp;
+
+        // --- CONFIGURATION ---
+        const CONFIG = {
+            ADMIN_ID: 5388705775,
+            BOT_USERNAME: 'pepe_earningSA_bot',
+            WEBAPP_NAME: 'PEPE Earning', // Shortname defined in BotFather
+            MIN_WITHDRAW: 10.00,
+            AD_REWARD: 0.01,
+            REF_REWARD: 0.50,
+            MAX_ADS_DAILY: 1000
+        };
+
+        // --- STATE MANAGEMENT ---
+        let state = {
+            balance: 0.00,
+            totalAds: 0,
+            dailyAds: 0,
+            lastDate: null,
+            referrals: 0
+        };
+
+        // --- DOM ELEMENTS ---
+        const els = {
+            balance: document.getElementById('balanceDisplay'),
+            adCount: document.getElementById('adCountDisplay'),
+            dailyCount: document.getElementById('dailyAdCountDisplay'),
+            wBalance: document.getElementById('withdrawBalanceDisplay'),
+            refCount: document.getElementById('referralCountDisplay'),
+            refBonus: document.getElementById('referralBonusDisplay'),
+            refLink: document.getElementById('referralLink'),
+            status: document.getElementById('statusMessage'),
+            
+            // Buttons
+            btnAd: document.getElementById('rewardedBtn'),
+            btnMainW: document.getElementById('mainWithdrawBtn'),
+            btnFinalW: document.getElementById('finalWithdrawBtn'),
+            inputAddr: document.getElementById('paymentAddress'),
+            
+            // Views
+            views: document.querySelectorAll('.view'),
+            navs: document.querySelectorAll('.nav-btn'),
+            admin: document.getElementById('adminPanel')
+        };
+
+        // --- CORE FUNCTIONS ---
+
+        function getTodayStr() { return new Date().toISOString().split('T')[0]; }
+
+        function loadData() {
+            try {
+                const saved = JSON.parse(localStorage.getItem('userState'));
+                if (saved) state = { ...state, ...saved };
+                
+                // Reset daily limit if new day
+                if (state.lastDate !== getTodayStr()) {
+                    state.dailyAds = 0;
+                    state.lastDate = getTodayStr();
+                    saveData();
+                }
+            } catch(e) { console.error("Load error", e); }
+        }
+
+        function saveData() {
+            localStorage.setItem('userState', JSON.stringify(state));
+            updateUI();
+        }
+
+        function updateUI() {
+            // Format numbers
+            const balStr = state.balance.toFixed(2);
+            
+            els.balance.textContent = `USDT ${balStr}`;
+            els.wBalance.textContent = `USDT ${balStr}`;
+            els.adCount.textContent = state.totalAds;
+            els.dailyCount.textContent = `${state.dailyAds} / ${CONFIG.MAX_ADS_DAILY}`;
+            
+            els.refCount.textContent = state.referrals;
+            els.refBonus.textContent = `USDT ${(state.referrals * CONFIG.REF_REWARD).toFixed(2)}`;
+
+            // Update Button States
+            const canWithdraw = state.balance >= CONFIG.MIN_WITHDRAW;
+            
+            els.btnMainW.textContent = canWithdraw ? 'Go to Withdraw' : `Reach ${CONFIG.MIN_WITHDRAW.toFixed(2)} USDT to Withdraw`;
+            els.btnMainW.disabled = !canWithdraw;
+
+            els.btnFinalW.textContent = canWithdraw ? `Withdraw ${balStr} USDT` : `Min: ${CONFIG.MIN_WITHDRAW.toFixed(2)} USDT`;
+            els.btnFinalW.disabled = !canWithdraw;
+
+            const limitReached = state.dailyAds >= CONFIG.MAX_ADS_DAILY;
+            els.btnAd.textContent = limitReached ? 'Daily Limit Reached' : 'Watch Ad (+0.01 USDT)';
+            els.btnAd.disabled = limitReached;
+        }
+
+        function showToast(msg, type = 'success') {
+            els.status.textContent = msg;
+            els.status.className = `status-message ${type}`;
+            els.status.style.display = 'block';
+            setTimeout(() => els.status.style.display = 'none', 3000);
+        }
+
+        function switchView(viewId) {
+            els.views.forEach(v => v.style.display = 'none');
+            document.getElementById(viewId).style.display = 'block';
+            
+            els.navs.forEach(n => n.classList.remove('active'));
+            const map = {'home-view': 'navHome', 'withdraw-view': 'navWithdraw', 'referral-view': 'navRefer'};
+            if(map[viewId]) document.getElementById(map[viewId]).classList.add('active');
+        }
+
+        // --- ACTION HANDLERS ---
+
+        function watchAd() {
+            if (state.dailyAds >= CONFIG.MAX_ADS_DAILY) return;
+            
+            showToast("Loading Ad...", "success"); // Using success style for blue info look
+            
+            if (typeof show_10233960 === 'undefined') {
+                showToast("AdBlocker detected. Please disable.", "error");
+                return;
+            }
+
+            show_10233960().then(() => {
+                state.balance += CONFIG.AD_REWARD;
+                state.totalAds++;
+                state.dailyAds++;
+                saveData();
+                showToast(`Success! +${CONFIG.AD_REWARD} USDT`, "success");
+            }).catch(e => {
+                showToast("No ads available. Try later.", "error");
+            });
+        }
+
+        function requestWithdraw() {
+            const addr = els.inputAddr.value.trim();
+            if(addr.length < 10 || !addr.startsWith('T')) {
+                showToast("Invalid TRC20 Address", "error");
+                return;
+            }
+            
+            const user = tg.initDataUnsafe.user || {id: 0, first_name: 'Unknown'};
+            const msg = `Withdraw Req:\nID: ${user.id}\nAmt: ${state.balance.toFixed(2)}\nAddr: ${addr}`;
+            
+            tg.sendData(msg);
+            
+            // Reset balance after request (simulated)
+            state.balance = 0; 
+            saveData();
+            els.inputAddr.value = '';
+            showToast("Request Sent!", "success");
+            switchView('home-view');
+        }
+
+        function setupReferralLink() {
+            const user = tg.initDataUnsafe.user;
+            if (user && user.id) {
+                // Generates: https://t.me/BOT_USERNAME/WEBAPP_NAME?startapp=ref12345
+                const link = `https://t.me/${CONFIG.BOT_USERNAME}/${CONFIG.WEBAPP_NAME}?startapp=ref${user.id}`;
+                els.refLink.textContent = link;
+                els.refLink.onclick = () => {
+                    navigator.clipboard.writeText(link);
+                    showToast("Link Copied!", "success");
+                };
+            } else {
+                // Keeps the default text if not inside Telegram
+                els.refLink.style.opacity = "0.5";
+            }
+        }
+
+        // --- INITIALIZATION ---
+        
+        // Event Listeners
+        els.btnAd.onclick = watchAd;
+        els.btnMainW.onclick = () => switchView('withdraw-view');
+        els.btnFinalW.onclick = requestWithdraw;
+        
+        document.getElementById('navHome').onclick = () => switchView('home-view');
+        document.getElementById('navWithdraw').onclick = () => switchView('withdraw-view');
+        document.getElementById('navRefer').onclick = () => switchView('referral-view');
+
+        // Boot
+        tg.ready();
+        tg.expand(); // Full screen
+        
+        // Check for referral start param
+        const startParam = tg.initDataUnsafe.start_param;
+        if(startParam && startParam.startsWith('ref')) {
+            // Logic to reward referrer would go here (needs backend)
+            console.log("Referred by:", startParam);
+        }
+
+        // Admin Check
+        const user = tg.initDataUnsafe.user;
+        if(user && user.id === CONFIG.ADMIN_ID) {
+            els.admin.style.display = 'block';
+            document.getElementById('userInfo').textContent = `Admin Mode: ${user.first_name}`;
+        }
+
+        loadData();
+        setupReferralLink();
+    });
+</script>
+</body>
+</html>            line-height: 1.4;
             padding: 0 10px;
         }
 
