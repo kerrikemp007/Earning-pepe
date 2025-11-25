@@ -3,698 +3,464 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Earn App - Telegram Mini App</title>
+    <title>PEPE Earning</title>
     
-    <!-- Telegram Web App SDK -->
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- Monetag Ad Script -->
+    <script src='//libtl.com/sdk.js' data-zone='10233960' data-sdk='show_10233960'></script>
     
-    <!-- Firebase SDKs (v8) -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <!-- External Libs -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-
-    <!-- MONETAG ADS SCRIPT -->
-    <script src='//libtl.com/sdk.js' data-zone='10233960' data-sdk='show_10233960' async></script>
+    <!-- Firebase SDK (Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
     <style>
-        :root {
-            --primary: #0088cc;
-            --bg: #181818;
-            --card: #242424;
-            --text: #ffffff;
-            --green: #2ecc71;
-            --red: #e74c3c;
-        }
-
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            margin: 0;
-            padding: 0;
-            padding-bottom: 80px;
-            overflow-x: hidden;
-            -webkit-user-select: none;
-            user-select: none;
-        }
-
-        /* --- Components --- */
-        .container { padding: 15px; }
+        :root { --primary: #4CAF50; --dark: #1a1a1a; --darker: #121212; --text: #e0e0e0; }
+        body { margin: 0; padding: 0; background-color: var(--dark); color: var(--text); font-family: sans-serif; padding-bottom: 70px; user-select: none; }
         
-        .card {
-            background: var(--card);
-            border-radius: 12px;
-            padding: 15px;
-            margin-bottom: 15px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-            border: 1px solid #333;
-        }
-
-        .btn {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 8px;
-            width: 100%;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        .btn:active { transform: scale(0.98); opacity: 0.8; }
-        .btn-green { background: var(--green); }
-        .btn-red { background: var(--red); }
-        .btn:disabled { background: #555; cursor: not-allowed; }
-
-        input {
-            width: 100%;
-            padding: 12px;
-            margin: 5px 0 15px 0;
-            border-radius: 8px;
-            border: 1px solid #444;
-            background: #333;
-            color: white;
-            box-sizing: border-box;
-            outline: none;
-        }
-
-        /* --- Balance Header --- */
-        .balance-box {
-            text-align: center;
-            padding: 25px;
-            background: linear-gradient(135deg, var(--primary), #005f8f);
-            border-radius: 0 0 20px 20px;
-            box-shadow: 0 4px 15px rgba(0,136,204,0.3);
-            margin-bottom: 20px;
-        }
-        .balance-box h1 { margin: 5px 0; font-size: 36px; }
-        .user-tag { font-size: 12px; opacity: 0.8; background: rgba(0,0,0,0.2); padding: 2px 8px; border-radius: 10px;}
-
-        /* --- Bottom Navigation --- */
-        .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            width: 100%;
-            background: #202020;
-            display: flex;
-            justify-content: space-around;
-            padding: 10px 0 15px 0;
-            border-top: 1px solid #333;
-            z-index: 100;
-        }
-        .nav-item {
-            text-align: center;
-            color: #777;
-            font-size: 10px;
-            cursor: pointer;
-            width: 20%;
-        }
+        /* Header */
+        .header { background: var(--darker); padding: 15px; text-align: center; border-bottom: 2px solid var(--primary); display: flex; justify-content: space-between; align-items: center; }
+        .balance-box { background: var(--primary); color: white; padding: 5px 15px; border-radius: 20px; font-weight: bold; }
+        
+        /* Navigation */
+        .nav { position: fixed; bottom: 0; width: 100%; background: var(--darker); display: flex; justify-content: space-around; padding: 10px 0; border-top: 1px solid #333; z-index: 100; }
+        .nav-item { text-align: center; color: #888; font-size: 12px; cursor: pointer; }
         .nav-item.active { color: var(--primary); }
-        .nav-item i { font-size: 22px; display: block; margin-bottom: 4px; }
+        .nav-item i { font-size: 20px; display: block; margin-bottom: 3px; }
 
-        /* --- Pages --- */
-        .page { display: none; animation: fadeIn 0.3s; }
+        /* Pages */
+        .page { display: none; padding: 20px; animation: fadeIn 0.3s; }
         .page.active { display: block; }
-        @keyframes fadeIn { from {opacity:0;} to {opacity:1;} }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* --- Utilities --- */
-        .task-item { display: flex; justify-content: space-between; align-items: center; }
-        .history-item { border-bottom: 1px solid #333; padding: 10px 0; font-size: 13px; display: flex; justify-content: space-between; }
+        /* Components */
+        .card { background: var(--darker); padding: 15px; border-radius: 10px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-outline { border: 1px solid var(--primary); background: transparent; color: var(--primary); }
         
-        /* Spin Wheel Animation Placeholder */
-        .spin-container { text-align: center; margin: 20px 0; }
-        .fa-spinner { font-size: 60px; color: var(--primary); }
-
-        #loading-screen {
-            position: fixed; top:0; left:0; width:100%; height:100%;
-            background: var(--bg); z-index: 999; display: flex;
-            justify-content: center; align-items: center; flex-direction: column;
-        }
+        /* Spin Wheel Simple */
+        .wheel-container { width: 200px; height: 200px; background: conic-gradient(red 0deg 60deg, yellow 60deg 120deg, blue 120deg 180deg, green 180deg 240deg, purple 240deg 300deg, orange 300deg 360deg); border-radius: 50%; margin: 20px auto; position: relative; transition: transform 3s ease-out; }
+        .arrow { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 10px solid transparent; border-right: 10px solid transparent; border-top: 20px solid white; z-index: 10; }
+        
+        /* Inputs */
+        input, select { width: 90%; padding: 10px; background: #333; border: 1px solid #555; color: white; border-radius: 5px; margin-bottom: 10px; }
+        
+        .history-item { border-bottom: 1px solid #333; padding: 10px 0; display: flex; justify-content: space-between; font-size: 13px; }
+        .status-pending { color: orange; }
+        .status-approved { color: green; }
+        .status-rejected { color: red; }
     </style>
 </head>
 <body>
 
-<!-- Loading Screen -->
-<div id="loading-screen">
-    <i class="fas fa-circle-notch fa-spin fa-2x" style="color:var(--primary)"></i>
-    <p style="margin-top:10px;">Loading App...</p>
-</div>
+    <div class="header">
+        <div id="username-display">User</div>
+        <div class="balance-box">$<span id="balance">0.000</span></div>
+    </div>
 
-<!-- Top Balance Header -->
-<div class="balance-box">
-    <p style="margin:0; font-size:14px;">Total Balance</p>
-    <h1>$<span id="user-balance">0.0000</span></h1>
-    <span class="user-tag">ID: <span id="user-id">...</span></span>
-</div>
-
-<div id="main-content" class="container">
-
-    <!-- 1. HOME -->
+    <!-- HOME PAGE -->
     <div id="home" class="page active">
-        <h3 class="mb-3">Earn Money</h3>
-        
         <div class="card">
-            <h4><i class="fas fa-play-circle" style="color: #e74c3c;"></i> Watch Video</h4>
-            <p style="font-size:13px; color:#ccc;">Watch a short ad to earn rewards instantly.</p>
-            <button class="btn" onclick="watchAd()" id="btn-ad">Watch Ad (+$<span id="ad-reward-disp">0</span>)</button>
+            <h3><i class="fas fa-play-circle"></i> Watch Ads</h3>
+            <p>Earn money by watching video ads.</p>
+            <button class="btn btn-primary" onclick="watchAd()">Watch Ad</button>
         </div>
 
-        <div class="card">
-            <h4><i class="fas fa-dharmachakra" style="color: #f1c40f;"></i> Lucky Spin</h4>
-            <div class="spin-container">
-                <div id="spin-animation" style="display:none;"><i class="fas fa-spinner fa-spin"></i></div>
-                <h2 id="spin-result" style="font-size: 40px; margin: 10px 0;">🎰</h2>
-            </div>
-            <button class="btn btn-green" onclick="doSpin()" id="btn-spin">Spin Now</button>
-            <p style="font-size: 11px; text-align: center; margin-top:8px; opacity:0.6;">
-                Remaining Spins: <span id="spin-left">0</span>
-            </p>
-        </div>
-    </div>
-
-    <!-- 2. GAMES -->
-    <div id="games" class="page">
-        <h3>Math Quiz</h3>
         <div class="card" style="text-align: center;">
-            <p style="color:#aaa;">Solve to earn +$<span id="math-reward-disp">0</span></p>
-            <h1 id="math-q" style="font-size:40px; margin: 20px 0;">0 + 0 = ?</h1>
-            <input type="number" id="math-ans" placeholder="Your Answer" style="text-align: center; font-size: 18px;">
-            <button class="btn" onclick="submitMath()">Submit Answer</button>
-            <p id="math-msg" style="margin-top:10px; height:20px; font-weight:bold;"></p>
+            <h3><i class="fas fa-dharmachakra"></i> Daily Spin</h3>
+            <div class="arrow"></div>
+            <div class="wheel-container" id="wheel"></div>
+            <button class="btn btn-primary" onclick="spinWheel()">Spin Now</button>
+            <p id="spin-limit-text" style="font-size: 12px; color: #777; margin-top: 5px;"></p>
         </div>
     </div>
 
-    <!-- 3. WALLET -->
-    <div id="wallet" class="page">
-        <h3>Wallet</h3>
-        
+    <!-- GAMES PAGE -->
+    <div id="games" class="page">
         <div class="card">
-            <h4><i class="fas fa-arrow-down"></i> Deposit</h4>
-            <p style="font-size: 12px; color: #aaa; margin-bottom:5px;">Send USDT (TRC20) to this address:</p>
-            <div style="background:#000; padding:10px; border-radius:6px; word-break:break-all; font-family:monospace; font-size:12px; margin-bottom:10px;" onclick="copyToClip(this.innerText)">
-                <span id="dep-addr-disp">Loading...</span> <i class="fas fa-copy" style="float:right;"></i>
+            <h3><i class="fas fa-calculator"></i> Math Faucet</h3>
+            <div style="background: #333; padding: 20px; font-size: 24px; text-align: center; border-radius: 5px; margin: 10px 0;">
+                <span id="math-q">Loading...</span>
             </div>
-            <input type="number" id="dep-amount" placeholder="Amount Sent ($)">
-            <input type="text" id="dep-hash" placeholder="Transaction ID (Hash)">
-            <button class="btn btn-green" onclick="submitDeposit()">I Sent Payment</button>
-        </div>
-
-        <div class="card">
-            <h4><i class="fas fa-arrow-up"></i> Withdraw</h4>
-            <p style="font-size:12px; margin-bottom:10px;">Min Withdraw: $<span id="min-with-disp">0</span></p>
-            <input type="text" id="with-addr" placeholder="Your USDT (TRC20) Address">
-            <input type="number" id="with-amount" placeholder="Amount ($)">
-            <button class="btn btn-red" onclick="submitWithdraw()">Request Withdraw</button>
+            <input type="number" id="math-a" placeholder="Enter Answer">
+            <button class="btn btn-primary" onclick="submitMath()">Submit Answer</button>
         </div>
     </div>
 
-    <!-- 4. TASKS -->
+    <!-- WALLET PAGE -->
+    <div id="wallet" class="page">
+        <div class="card">
+            <h3>Withdraw</h3>
+            <select id="withdraw-method">
+                <option value="FaucetPay">FaucetPay</option>
+                <option value="Cwallet">Cwallet</option>
+                <option value="TrustWallet">Trust Wallet</option>
+            </select>
+            <input type="number" id="withdraw-amount" placeholder="Amount (USD)">
+            <button class="btn btn-primary" onclick="withdraw()">Request Withdraw</button>
+        </div>
+        <div class="card">
+            <h3>Deposit USDT</h3>
+            <p style="font-size:12px; color:#aaa;">Send USDT to: <b id="admin-wallet" style="color:#fff; user-select: text;">Loading...</b></p>
+            <input type="number" id="deposit-amount" placeholder="Amount Sent">
+            <input type="text" id="deposit-proof" placeholder="Screenshot URL (e.g., imgbb.com)">
+            <button class="btn btn-outline" onclick="deposit()">Submit Deposit</button>
+        </div>
+    </div>
+
+    <!-- PROMOTE PAGE -->
     <div id="promote" class="page">
         <h3>Social Tasks</h3>
-        <p style="font-size:12px; opacity:0.7;">Complete tasks to earn more.</p>
         <div id="task-list">
-            <!-- Loaded via JS -->
+            <!-- Tasks load here -->
         </div>
     </div>
 
-    <!-- 5. PROFILE -->
+    <!-- PROFILE PAGE -->
     <div id="profile" class="page">
-        <h3>Profile</h3>
         <div class="card">
-            <h4>Invite Friends</h4>
-            <p style="font-size:13px;">Earn $<span id="ref-reward-disp">0</span> for every friend.</p>
-            <input type="text" id="ref-link" readonly value="..." onclick="copyToClip(this.value)">
-            <button class="btn" onclick="copyRef()">Copy Invite Link</button>
+            <h3><i class="fas fa-user-cog"></i> Settings</h3>
+            <input type="text" id="set-faucetpay" placeholder="FaucetPay Email">
+            <input type="text" id="set-cwallet" placeholder="Cwallet UID">
+            <input type="text" id="set-trust" placeholder="Trust Wallet Address">
+            <button class="btn btn-primary" onclick="saveSettings()">Save Details</button>
+        </div>
+        
+        <div class="card">
+            <h3>Referral</h3>
+            <p>Share this link to earn:</p>
+            <input type="text" id="refer-link" readonly value="https://t.me/pepe_earningSA_bot?start=USERID">
+            <button class="btn btn-outline" onclick="copyRefer()">Copy Link</button>
         </div>
 
         <div class="card">
-            <h4>History</h4>
-            <div id="history-list" style="max-height: 200px; overflow-y: auto;">
-                <p style="text-align:center; padding:10px; opacity:0.5;">Loading...</p>
-            </div>
+            <h3>History</h3>
+            <button class="btn btn-outline" onclick="loadHistory('withdraw')">Withdrawals</button>
+            <button class="btn btn-outline" onclick="loadHistory('deposit')">Deposits</button>
+            <button class="btn btn-outline" onclick="loadHistory('tasks')">Tasks</button>
+            <div id="history-list" style="margin-top: 15px;"></div>
         </div>
     </div>
-</div>
 
-<!-- Bottom Nav -->
-<div class="bottom-nav">
-    <div class="nav-item active" onclick="nav('home', this)">
-        <i class="fas fa-home"></i> Home
+    <!-- Navigation Bar -->
+    <div class="nav">
+        <div class="nav-item active" onclick="nav('home')"><i class="fas fa-home"></i>Home</div>
+        <div class="nav-item" onclick="nav('games')"><i class="fas fa-gamepad"></i>Games</div>
+        <div class="nav-item" onclick="nav('wallet')"><i class="fas fa-wallet"></i>Wallet</div>
+        <div class="nav-item" onclick="nav('promote')"><i class="fas fa-bullhorn"></i>Promote</div>
+        <div class="nav-item" onclick="nav('profile')"><i class="fas fa-user"></i>Profile</div>
     </div>
-    <div class="nav-item" onclick="nav('games', this)">
-        <i class="fas fa-gamepad"></i> Games
-    </div>
-    <div class="nav-item" onclick="nav('wallet', this)">
-        <i class="fas fa-wallet"></i> Wallet
-    </div>
-    <div class="nav-item" onclick="nav('promote', this)">
-        <i class="fas fa-tasks"></i> Tasks
-    </div>
-    <div class="nav-item" onclick="nav('profile', this)">
-        <i class="fas fa-user"></i> Profile
-    </div>
-</div>
 
-<script>
-    // 1. FIREBASE CONFIG
-    const firebaseConfig = {
-        apiKey: "AIzaSyAblvjeKU95KNpjzS08e_MHJWSEmJX8V0k",
-        authDomain: "earning-pepe.firebaseapp.com",
-        databaseURL: "https://earning-pepe-default-rtdb.firebaseio.com",
-        projectId: "earning-pepe",
-        storageBucket: "earning-pepe.firebasestorage.app",
-        messagingSenderId: "516597922287",
-        appId: "1:516597922287:web:3d8cd85b87f51c437bde1a"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-
-    // 2. TELEGRAM INIT & VARIABLES
-    const tg = window.Telegram.WebApp;
-    tg.expand(); // Make full screen
-
-    // Use Telegram ID if available, otherwise random for testing in browser
-    const userId = (tg.initDataUnsafe && tg.initDataUnsafe.user) 
-        ? tg.initDataUnsafe.user.id.toString() 
-        : "test_user_" + Math.floor(Math.random() * 1000);
-
-    // App State
-    let settings = {};
-    let userData = {};
-    let currentMathAns = 0;
-    let adScriptLoaded = false;
-    let adLoadingTimeout;
-
-    // 3. STARTUP LOGIC
-    document.addEventListener("DOMContentLoaded", () => {
-        document.getElementById('user-id').innerText = userId;
-        document.getElementById('ref-link').value = `https://t.me/YourBotName?start=${userId}`; // REPLACE YourBotName
-
-        // 3.1 Load Global Settings
-        db.ref('settings').on('value', snap => {
-            if(snap.exists()) {
-                settings = snap.val();
-            } else {
-                // Default Fallback
-                settings = {
-                    adReward: 0.001, mathReward: 0.0005, minWithdraw: 0.5, 
-                    referReward: 0.05, dailySpin: 10, maintenance: "false", 
-                    depositAddr: "T..."
-                };
-            }
-            updateUISettings();
-            checkMaintenance();
-        });
-
-        // 3.2 Load User Data
-        db.ref('users/' + userId).on('value', snap => {
-            if(snap.exists()) {
-                userData = snap.val();
-                if(userData.status === 'banned') {
-                    document.body.innerHTML = "<h1 style='color:red;text-align:center;margin-top:50px;'>ACCOUNT BANNED</h1>";
-                    return;
-                }
-                updateUserUI();
-            } else {
-                createNewUser();
-            }
-            document.getElementById('loading-screen').style.display = 'none';
-        });
-
-        // 3.3 Load History & Tasks
-        loadHistory();
-        loadTasks();
-        
-        // 3.4 Check if Monetag script is loaded
-        checkAdScriptLoaded();
-    });
-
-    function checkAdScriptLoaded() {
-        // Check if the Monetag script is loaded
-        const checkInterval = setInterval(() => {
-            if (typeof show_10233960 === 'function') {
-                adScriptLoaded = true;
-                clearInterval(checkInterval);
-                console.log('Monetag script loaded successfully');
-            }
-        }, 500);
-        
-        // Stop checking after 10 seconds
-        setTimeout(() => {
-            clearInterval(checkInterval);
-            if (!adScriptLoaded) {
-                console.warn('Monetag script failed to load after 10 seconds');
-            }
-        }, 10000);
-    }
-
-    function createNewUser() {
-        // Check for referral param
-        const startParam = tg.initDataUnsafe.start_param || null;
-        let referrer = (startParam && startParam !== userId) ? startParam : "system";
-
-        let newUser = {
-            balance: 0.0000,
-            referrer: referrer,
-            status: 'active',
-            spinsToday: 0,
-            lastSpinDate: new Date().toDateString(),
-            joined: new Date().toISOString()
+    <script>
+        // --- CONFIGURATION ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyAblvjeKU95KNpjzS08e_MHJWSEmJX8V0k",
+            authDomain: "earning-pepe.firebaseapp.com",
+            databaseURL: "https://earning-pepe-default-rtdb.firebaseio.com",
+            projectId: "earning-pepe",
+            storageBucket: "earning-pepe.firebasestorage.app",
+            messagingSenderId: "516597922287",
+            appId: "1:516597922287:web:3d8cd85b87f51c437bde1a"
         };
 
-        db.ref('users/' + userId).set(newUser);
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
 
-        // Reward Referrer
-        if(referrer !== "system") {
-            db.ref('users/' + referrer).once('value', s => {
-                if(s.exists()) {
-                    let rData = s.val();
-                    let newBal = (parseFloat(rData.balance) + parseFloat(settings.referReward || 0));
-                    db.ref('users/' + referrer).update({ balance: newBal });
-                    logTransaction(referrer, parseFloat(settings.referReward), "Referral Bonus");
+        // Simulate Telegram User (In real app, get from Telegram WebApp.initData)
+        let userId = localStorage.getItem('pepe_user_id');
+        if(!userId) {
+            userId = 'user_' + Math.floor(Math.random() * 100000);
+            localStorage.setItem('pepe_user_id', userId);
+        }
+        let userData = {};
+        let appSettings = {};
+
+        // --- INIT ---
+        window.onload = function() {
+            document.getElementById('username-display').innerText = userId;
+            document.getElementById('refer-link').value = `https://t.me/pepe_earningSA_bot?start=${userId}`;
+            loadUserData();
+            loadSettings();
+            generateMath();
+            loadTasks();
+        };
+
+        // --- NAVIGATION ---
+        function nav(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            // Update active nav style logic would go here
+        }
+
+        // --- FIREBASE LISTENERS ---
+        function loadUserData() {
+            db.ref('users/' + userId).on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    userData = data;
+                    document.getElementById('balance').innerText = (data.balance || 0).toFixed(4);
+                    
+                    if(data.isBanned) {
+                        Swal.fire('Banned', 'You have been banned.', 'error');
+                        document.body.innerHTML = '<h1 style="color:red;text-align:center;margin-top:50px;">BANNED</h1>';
+                    }
+
+                    // Fill profile inputs
+                    if(data.walletDetails) {
+                        document.getElementById('set-faucetpay').value = data.walletDetails.faucetpay || '';
+                        document.getElementById('set-cwallet').value = data.walletDetails.cwallet || '';
+                        document.getElementById('set-trust').value = data.walletDetails.trust || '';
+                    }
+                } else {
+                    // Create new user
+                    db.ref('users/' + userId).set({
+                        username: userId,
+                        balance: 0,
+                        status: 'active',
+                        joined: Date.now()
+                    });
                 }
             });
         }
-    }
 
-    // 4. UI UPDATES
-    function updateUISettings() {
-        document.getElementById('ad-reward-disp').innerText = settings.adReward;
-        document.getElementById('math-reward-disp').innerText = settings.mathReward;
-        document.getElementById('min-with-disp').innerText = settings.minWithdraw;
-        document.getElementById('ref-reward-disp').innerText = settings.referReward;
-        document.getElementById('dep-addr-disp').innerText = settings.depositAddr || "Ask Admin";
-    }
-
-    function checkMaintenance() {
-        if(settings.maintenance === "true") {
-            document.getElementById('main-content').innerHTML = `
-                <div class="card" style="text-align:center; margin-top:50px;">
-                    <i class="fas fa-tools fa-3x" style="color:orange;"></i>
-                    <h3>Maintenance Mode</h3>
-                    <p>We are updating the app. Please come back later.</p>
-                </div>`;
-            document.querySelector('.bottom-nav').style.display = 'none';
+        function loadSettings() {
+            db.ref('settings').on('value', (snap) => {
+                appSettings = snap.val() || {};
+                document.getElementById('admin-wallet').innerText = appSettings.depositAddress || 'TRX...';
+                document.getElementById('spin-limit-text').innerText = `Limit: ${appSettings.dailySpinLimit || 10} per day`;
+            });
         }
-    }
 
-    function updateUserUI() {
-        document.getElementById('user-balance').innerText = parseFloat(userData.balance).toFixed(4);
-        
-        // Check spin reset
-        let today = new Date().toDateString();
-        if(userData.lastSpinDate !== today) {
-            db.ref('users/' + userId).update({ spinsToday: 0, lastSpinDate: today });
-            userData.spinsToday = 0;
-        }
-        
-        let spinsLeft = (settings.dailySpin || 10) - (userData.spinsToday || 0);
-        document.getElementById('spin-left').innerText = Math.max(0, spinsLeft);
-    }
-
-    // 5. FUNCTIONALITIES
-
-    // Navigation
-    window.nav = function(pageId, btn) {
-        document.querySelectorAll('.page').forEach(e => e.classList.remove('active'));
-        document.getElementById(pageId).classList.add('active');
-        document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
-        btn.classList.add('active');
-        if(pageId === 'games') generateMath();
-    }
-
-    // --- MONETAG AD INTEGRATION START ---
-    window.watchAd = function() {
-        let btn = document.getElementById('btn-ad');
-        
-        // Clear any existing timeout
-        if (adLoadingTimeout) {
-            clearTimeout(adLoadingTimeout);
-        }
-        
-        // Disable button and show loading state
-        btn.disabled = true;
-        btn.innerText = "Loading Ad...";
-        
-        // Check if the Monetag function is ready
-        if (adScriptLoaded && typeof show_10233960 === 'function') {
-            // Set a timeout for ad loading
-            adLoadingTimeout = setTimeout(() => {
-                btn.disabled = false;
-                btn.innerText = `Watch Ad (+$${settings.adReward})`;
-                alert("Ad loading timed out. Please try again.");
-            }, 10000);
-            
-            // Try different ad formats
-            try {
-                // First try with 'pop' format
-                show_10233960('pop').then(() => {
-                    clearTimeout(adLoadingTimeout);
-                    addBalance(settings.adReward, "Watched Ad");
-                    btn.disabled = false;
-                    btn.innerText = `Watch Ad (+$${settings.adReward})`;
-                    alert("Reward Added!");
-                }).catch(e => {
-                    console.error('Ad error with pop format:', e);
-                    // Try without format parameter
-                    try {
-                        show_10233960().then(() => {
-                            clearTimeout(adLoadingTimeout);
-                            addBalance(settings.adReward, "Watched Ad");
-                            btn.disabled = false;
-                            btn.innerText = `Watch Ad (+$${settings.adReward})`;
-                            alert("Reward Added!");
-                        }).catch(e2 => {
-                            clearTimeout(adLoadingTimeout);
-                            console.error('Ad error without format:', e2);
-                            btn.disabled = false;
-                            btn.innerText = `Watch Ad (+$${settings.adReward})`;
-                            alert("Ad loading failed. Please try again later.");
-                        });
-                    } catch (e2) {
-                        clearTimeout(adLoadingTimeout);
-                        console.error('Ad function call error:', e2);
-                        btn.disabled = false;
-                        btn.innerText = `Watch Ad (+$${settings.adReward})`;
-                        alert("Ad loading failed. Please try again later.");
-                    }
+        // --- HOME FUNCTIONS ---
+        function watchAd() {
+            if (typeof show_10233960 === 'function') {
+                show_10233960().then(() => {
+                    // Ad Closed/Finished logic (Simulated here as usually callback is complex without full sdk docs)
+                    giveReward('videoAdReward', 'Ad Watched');
                 });
-            } catch (e) {
-                clearTimeout(adLoadingTimeout);
-                console.error('Ad function call error:', e);
-                btn.disabled = false;
-                btn.innerText = `Watch Ad (+$${settings.adReward})`;
-                alert("Ad loading failed. Please try again later.");
-            }
-        } else {
-            // If script is not loaded yet, wait and retry
-            if (!adScriptLoaded) {
-                let retryCount = 0;
-                const retryInterval = setInterval(() => {
-                    retryCount++;
-                    if (adScriptLoaded || retryCount > 10) {
-                        clearInterval(retryInterval);
-                        if (adScriptLoaded) {
-                            watchAd(); // Retry once script is loaded
-                        } else {
-                            btn.disabled = false;
-                            btn.innerText = `Watch Ad (+$${settings.adReward})`;
-                            alert("Ads are still loading. Please wait a moment and try again.");
-                        }
-                    }
-                }, 1000);
             } else {
-                btn.disabled = false;
-                btn.innerText = `Watch Ad (+$${settings.adReward})`;
-                alert("Ads are loading or blocked. Please wait or check your settings.");
+                // Fallback for testing/if adblock blocks script
+                Swal.fire('Ad Loading...', 'Simulating Ad Watch', 'info');
+                setTimeout(() => giveReward('videoAdReward', 'Ad Watched'), 3000);
             }
         }
-    }
-    // --- MONETAG AD INTEGRATION END ---
 
-    // Spin
-    window.doSpin = function() {
-        let maxSpins = settings.dailySpin || 10;
-        if((userData.spinsToday || 0) >= maxSpins) return alert("Daily limit reached!");
-
-        document.getElementById('spin-animation').style.display = "block";
-        document.getElementById('spin-result').style.display = "none";
-        document.getElementById('btn-spin').disabled = true;
-
-        setTimeout(() => {
-            document.getElementById('spin-animation').style.display = "none";
-            document.getElementById('spin-result').style.display = "block";
+        function spinWheel() {
+            const limit = appSettings.dailySpinLimit || 10;
+            const today = new Date().toDateString();
             
-            // Random win between 0.001 and 0.010
-            let win = (Math.random() * (0.01 - 0.001) + 0.001).toFixed(4);
-            document.getElementById('spin-result').innerText = `$${win}`;
-            
-            db.ref('users/' + userId).update({
-                balance: parseFloat(userData.balance) + parseFloat(win),
-                spinsToday: (userData.spinsToday || 0) + 1
-            });
-            logTransaction(userId, win, "Lucky Spin");
-            document.getElementById('btn-spin').disabled = false;
-        }, 1500);
-    }
-
-    // Math
-    function generateMath() {
-        let a = Math.floor(Math.random() * 20);
-        let b = Math.floor(Math.random() * 20);
-        currentMathAns = a + b;
-        document.getElementById('math-q').innerText = `${a} + ${b} = ?`;
-        document.getElementById('math-ans').value = "";
-        document.getElementById('math-msg').innerText = "";
-    }
-
-    window.submitMath = function() {
-        let ans = parseInt(document.getElementById('math-ans').value);
-        if(ans === currentMathAns) {
-            addBalance(settings.mathReward, "Math Quiz");
-            document.getElementById('math-msg').innerText = "Correct! +$" + settings.mathReward;
-            document.getElementById('math-msg').style.color = "var(--green)";
-            setTimeout(generateMath, 1500);
-        } else {
-            document.getElementById('math-msg').innerText = "Wrong!";
-            document.getElementById('math-msg').style.color = "var(--red)";
-        }
-    }
-
-    // Wallet
-    window.submitDeposit = function() {
-        let amt = document.getElementById('dep-amount').value;
-        let hash = document.getElementById('dep-hash').value;
-        if(!amt || !hash) return alert("Please fill all fields");
-
-        db.ref('deposits').push({
-            userId: userId,
-            amount: parseFloat(amt),
-            hash: hash,
-            status: 'pending',
-            date: new Date().toISOString()
-        });
-        alert("Deposit submitted for review!");
-        document.getElementById('dep-amount').value = "";
-        document.getElementById('dep-hash').value = "";
-    }
-
-    window.submitWithdraw = function() {
-        let amt = parseFloat(document.getElementById('with-amount').value);
-        let addr = document.getElementById('with-addr').value;
-        let min = parseFloat(settings.minWithdraw);
-
-        if(!amt || !addr) return alert("Fill all fields");
-        if(amt < min) return alert(`Minimum withdraw is $${min}`);
-        if(amt > userData.balance) return alert("Insufficient Balance");
-
-        // Deduct immediately
-        db.ref('users/' + userId).update({ balance: userData.balance - amt });
-
-        db.ref('withdrawals').push({
-            userId: userId,
-            amount: amt,
-            address: addr,
-            status: 'pending',
-            date: new Date().toISOString()
-        });
-        
-        logTransaction(userId, -amt, "Withdraw Request");
-        alert("Withdrawal requested successfully!");
-    }
-
-    // Tasks
-    function loadTasks() {
-        db.ref('tasks').on('value', s => {
-            const list = document.getElementById('task-list');
-            list.innerHTML = "";
-            if(!s.exists()) { list.innerHTML = "<p>No tasks available.</p>"; return; }
-            
-            s.forEach(child => {
-                let task = child.val();
-                let tId = child.key;
-                
-                // Check if done
-                let isDone = (userData.tasks && userData.tasks[tId]);
-                
-                let btnHtml = isDone 
-                    ? `<button class="btn" style="background:#555; width:80px; font-size:12px;" disabled>Done</button>`
-                    : `<button class="btn btn-green" style="width:80px; font-size:12px;" onclick="doTask('${tId}', '${task.url}', ${task.reward})">Start</button>`;
-
-                list.innerHTML += `
-                <div class="card task-item">
-                    <div>
-                        <b>${task.name}</b><br>
-                        <span style="font-size:12px; color:var(--green);">+$${task.reward}</span>
-                    </div>
-                    ${btnHtml}
-                </div>`;
-            });
-        });
-    }
-
-    window.doTask = function(tId, url, reward) {
-        tg.openLink(url); // Opens in external browser
-        // Simplified check - assumes they did it. In production, use callbacks/timers.
-        setTimeout(() => {
-            if(confirm("Did you complete the task?")) {
-                db.ref(`users/${userId}/tasks/${tId}`).set(true);
-                addBalance(reward, "Task Reward");
+            if(userData.lastSpinDate === today && userData.spinCount >= limit) {
+                return Swal.fire('Limit Reached', 'Come back tomorrow!', 'warning');
             }
-        }, 2000);
-    }
 
-    // Helpers
-    function addBalance(amt, reason) {
-        let newBal = parseFloat(userData.balance) + parseFloat(amt);
-        db.ref('users/' + userId).update({ balance: newBal });
-        logTransaction(userId, amt, reason);
-    }
+            // Simple Animation
+            const wheel = document.getElementById('wheel');
+            const deg = Math.floor(5000 + Math.random() * 5000);
+            wheel.style.transform = `rotate(${deg}deg)`;
 
-    function logTransaction(uid, amt, reason) {
-        db.ref('history/' + uid).push({
-            amount: amt,
-            reason: reason,
-            date: new Date().toLocaleString()
-        });
-    }
+            setTimeout(() => {
+                // Show Ad after spin
+                 if (typeof show_10233960 === 'function') { show_10233960(); }
+                 
+                // Reward
+                const reward = 0.001; // Example fixed reward or random
+                updateBalance(reward, 'Spin Reward');
+                
+                // Update Limits
+                let count = (userData.lastSpinDate === today) ? (userData.spinCount || 0) + 1 : 1;
+                db.ref('users/' + userId).update({
+                    spinCount: count,
+                    lastSpinDate: today
+                });
+                Swal.fire('You Won!', `$${reward}`, 'success');
+            }, 3000);
+        }
 
-    function loadHistory() {
-        db.ref('history/' + userId).limitToLast(20).on('value', s => {
-            const list = document.getElementById('history-list');
-            list.innerHTML = "";
-            if(!s.exists()) { list.innerHTML = "<p style='text-align:center; opacity:0.5;'>No history yet.</p>"; return; }
-            
-            // Show newest first
-            let items = [];
-            s.forEach(c => items.push(c.val()));
-            items.reverse().forEach(v => {
-                let color = v.amount >= 0 ? "lime" : "red";
-                let sign = v.amount >= 0 ? "+" : "";
-                list.innerHTML += `
-                <div class="history-item">
-                    <span>${v.reason}<br><small style="opacity:0.6;">${v.date}</small></span>
-                    <span style="color:${color}; font-weight:bold;">${sign}$${v.amount}</span>
-                </div>`;
+        // --- GAMES FUNCTIONS ---
+        let currentMathAns = 0;
+        function generateMath() {
+            const a = Math.floor(Math.random() * 50);
+            const b = Math.floor(Math.random() * 50);
+            currentMathAns = a + b;
+            document.getElementById('math-q').innerText = `${a} + ${b} = ?`;
+            document.getElementById('math-a').value = '';
+        }
+
+        function submitMath() {
+            const input = parseInt(document.getElementById('math-a').value);
+            if(input === currentMathAns) {
+                // Show Ad
+                if (typeof show_10233960 === 'function') { show_10233960(); }
+                
+                giveReward('mathGameReward', 'Math Game');
+                generateMath();
+            } else {
+                Swal.fire('Wrong', 'Try again', 'error');
+            }
+        }
+
+        // --- WALLET FUNCTIONS ---
+        function withdraw() {
+            const amount = parseFloat(document.getElementById('withdraw-amount').value);
+            const method = document.getElementById('withdraw-method').value;
+            const min = parseFloat(appSettings.minWithdraw || 0.5);
+
+            if(amount < min) return Swal.fire('Error', `Min withdraw is $${min}`, 'error');
+            if(amount > userData.balance) return Swal.fire('Error', 'Insufficient balance', 'error');
+
+            // Get address based on method
+            let address = '';
+            if(userData.walletDetails) {
+                if(method === 'FaucetPay') address = userData.walletDetails.faucetpay;
+                else if(method === 'Cwallet') address = userData.walletDetails.cwallet;
+                else if(method === 'TrustWallet') address = userData.walletDetails.trust;
+            }
+
+            if(!address) return Swal.fire('Error', 'Please set wallet details in Profile', 'error');
+
+            // Deduct balance first
+            db.ref('users/' + userId).update({ balance: userData.balance - amount });
+
+            // Create Record
+            db.ref('withdrawals').push({
+                userId: userId,
+                method: method,
+                address: address,
+                amount: amount,
+                status: 'pending',
+                date: Date.now()
             });
-        });
-    }
 
-    window.copyRef = function() {
-        let txt = document.getElementById('ref-link');
-        txt.select();
-        document.execCommand('copy');
-        alert("Copied!");
-    }
+            Swal.fire('Success', 'Withdrawal requested!', 'success');
+        }
 
-    window.copyToClip = function(text) {
-        navigator.clipboard.writeText(text).then(() => alert("Copied!"));
-    }
+        function deposit() {
+            const amount = parseFloat(document.getElementById('deposit-amount').value);
+            const proof = document.getElementById('deposit-proof').value;
 
-</script>
+            if(!amount || !proof) return Swal.fire('Error', 'Fill all fields', 'error');
 
+            db.ref('deposits').push({
+                userId: userId,
+                amount: amount,
+                proof: proof,
+                status: 'pending',
+                date: Date.now()
+            });
+            Swal.fire('Success', 'Deposit submitted for review', 'success');
+        }
+
+        // --- PROMOTE FUNCTIONS ---
+        function loadTasks() {
+            db.ref('tasks').on('value', (snap) => {
+                const list = document.getElementById('task-list');
+                list.innerHTML = '';
+                const tasks = snap.val();
+                if(tasks) {
+                    Object.keys(tasks).forEach(key => {
+                        const t = tasks[key];
+                        const div = document.createElement('div');
+                        div.className = 'card';
+                        div.innerHTML = `
+                            <h4>${t.name}</h4>
+                            <p>Reward: $${t.reward}</p>
+                            <a href="${t.url}" target="_blank" class="btn btn-outline" style="text-align:center; display:block; text-decoration:none;">Go to Task</a>
+                            <input type="text" id="proof-${key}" placeholder="Screenshot URL" style="margin-top:10px;">
+                            <button class="btn btn-primary" onclick="submitTask('${key}', ${t.reward})">Submit Proof</button>
+                        `;
+                        list.appendChild(div);
+                    });
+                } else {
+                    list.innerHTML = '<p>No tasks available.</p>';
+                }
+            });
+        }
+
+        function submitTask(taskId, reward) {
+            const proof = document.getElementById(`proof-${taskId}`).value;
+            if(!proof) return Swal.fire('Error', 'Enter proof URL', 'error');
+
+            db.ref('task_submissions').push({
+                taskId: taskId,
+                userId: userId,
+                proof: proof,
+                reward: reward, // Store intended reward
+                status: 'pending',
+                date: Date.now()
+            });
+            Swal.fire('Submitted', 'Admin will review shortly', 'success');
+        }
+
+        // --- PROFILE FUNCTIONS ---
+        function saveSettings() {
+            db.ref('users/' + userId + '/wallet_details').set({
+                faucetpay: document.getElementById('set-faucetpay').value,
+                cwallet: document.getElementById('set-cwallet').value,
+                trust: document.getElementById('set-trust').value
+            });
+            Swal.fire('Saved', 'Details updated', 'success');
+        }
+
+        function copyRefer() {
+            const copyText = document.getElementById("refer-link");
+            copyText.select();
+            document.execCommand("copy");
+            Swal.fire('Copied', 'Link copied to clipboard', 'success');
+        }
+
+        function loadHistory(type) {
+            const container = document.getElementById('history-list');
+            container.innerHTML = 'Loading...';
+            
+            let refPath = '';
+            if(type === 'withdraw') refPath = 'withdrawals';
+            if(type === 'deposit') refPath = 'deposits';
+            if(type === 'tasks') refPath = 'task_submissions';
+
+            // Simple query (client-side filter is slow for large apps, but okay for mini apps)
+            db.ref(refPath).orderByChild('userId').equalTo(userId).once('value', (snap) => {
+                container.innerHTML = '';
+                const data = snap.val();
+                if(!data) {
+                    container.innerHTML = 'No history found.'; 
+                    return;
+                }
+                
+                Object.values(data).forEach(item => {
+                    let text = `$${item.amount || item.reward} - ${item.status}`;
+                    container.innerHTML += `
+                        <div class="history-item">
+                            <span>${new Date(item.date).toLocaleDateString()}</span>
+                            <span class="status-${item.status}">${text}</span>
+                        </div>
+                    `;
+                });
+            });
+        }
+
+        // --- UTILS ---
+        function giveReward(settingKey, reason) {
+            const amount = parseFloat(appSettings[settingKey] || 0.001);
+            updateBalance(amount, reason);
+            Swal.fire('Reward', `You earned $${amount}`, 'success');
+        }
+
+        function updateBalance(amount, type) {
+            const newBal = (parseFloat(userData.balance) || 0) + amount;
+            db.ref('users/' + userId).update({ balance: newBal });
+            // Optional: Add to transaction log
+            db.ref('transactions').push({
+                userId: userId,
+                amount: amount,
+                type: type,
+                date: Date.now()
+            });
+        }
+
+    </script>
 </body>
 </html>
