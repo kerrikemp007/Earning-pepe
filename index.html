@@ -412,19 +412,27 @@
             btn.disabled = true;
             btn.innerText = "Loading Ad...";
 
-            // 2. Call the function defined in data-sdk='show_10233960'
-            show_10233960().then(() => {
+            // 2. Call the function with 'pop' parameter as provided by Monetag
+            show_10233960('pop').then(() => {
                 // 3. This block runs after the user watches/closes the ad
                 addBalance(settings.adReward, "Watched Ad");
                 
                 btn.disabled = false;
                 btn.innerText = `Watch Ad (+$${settings.adReward})`;
                 alert("Reward Added!");
+            }).catch(e => {
+                // 4. Handle errors during ad playback
+                console.error('Ad error:', e);
+                btn.disabled = false;
+                btn.innerText = `Watch Ad (+$${settings.adReward})`;
+                alert("Ad loading failed. Please try again later.");
             });
 
         } else {
             // Fallback if adblocker is on or connection is slow
             alert("Ads are loading or blocked. Please wait or check your settings.");
+            btn.disabled = false;
+            btn.innerText = `Watch Ad (+$${settings.adReward})`;
         }
     }
     // --- MONETAG AD INTEGRATION END ---
