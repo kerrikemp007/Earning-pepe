@@ -1,466 +1,595 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="bn">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PEPE Earning</title>
-    
-    <!-- Monetag Ad Script -->
-    <script src='//libtl.com/sdk.js' data-zone='10233960' data-sdk='show_10233960'></script>
-    
-    <!-- External Libs -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Firebase SDK (Compat) -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Business Ledger</title>
     <style>
-        :root { --primary: #4CAF50; --dark: #1a1a1a; --darker: #121212; --text: #e0e0e0; }
-        body { margin: 0; padding: 0; background-color: var(--dark); color: var(--text); font-family: sans-serif; padding-bottom: 70px; user-select: none; }
-        
-        /* Header */
-        .header { background: var(--darker); padding: 15px; text-align: center; border-bottom: 2px solid var(--primary); display: flex; justify-content: space-between; align-items: center; }
-        .balance-box { background: var(--primary); color: white; padding: 5px 15px; border-radius: 20px; font-weight: bold; }
-        
+        :root {
+            --primary: #2c3e50;
+            --secondary: #34495e;
+            --accent: #27ae60;
+            --danger: #c0392b;
+            --light: #f8f9fa;
+            --border: #dee2e6;
+            --header-bg: #f1c40f; 
+            --shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        body { font-family: 'Segoe UI', 'Roboto', Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: #eef2f5; color: #333; }
+
+        /* Layout */
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        .hidden { display: none !important; }
+
+        /* Auth Screen */
+        #auth-section { max-width: 400px; margin: 100px auto; background: white; padding: 40px; border-radius: 12px; box-shadow: var(--shadow); text-align: center; }
+        #auth-section input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box; }
+
         /* Navigation */
-        .nav { position: fixed; bottom: 0; width: 100%; background: var(--darker); display: flex; justify-content: space-around; padding: 10px 0; border-top: 1px solid #333; z-index: 100; }
-        .nav-item { text-align: center; color: #888; font-size: 12px; cursor: pointer; }
-        .nav-item.active { color: var(--primary); }
-        .nav-item i { font-size: 20px; display: block; margin-bottom: 3px; }
+        nav { background-color: var(--primary); padding: 15px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        nav button { background: transparent; color: rgba(255,255,255,0.8); border: 1px solid rgba(255,255,255,0.2); padding: 8px 16px; cursor: pointer; border-radius: 4px; font-weight: 600; transition: all 0.2s; font-size: 14px; }
+        nav button:hover, nav button.active { background-color: var(--header-bg); color: var(--primary); border-color: var(--header-bg); transform: translateY(-1px); }
+        .logout-btn { background-color: var(--danger) !important; border-color: var(--danger) !important; color: white !important; margin-left: auto; }
 
-        /* Pages */
-        .page { display: none; padding: 20px; animation: fadeIn 0.3s; }
-        .page.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        /* Sections */
+        .section-title { border-bottom: 2px solid var(--border); padding-bottom: 15px; margin: 30px 0 20px 0; color: var(--primary); display: flex; justify-content: space-between; align-items: center; }
+        .section-title h2 { margin: 0; font-size: 24px; font-weight: 700; }
 
-        /* Components */
-        .card { background: var(--darker); padding: 15px; border-radius: 10px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-        .btn { width: 100%; padding: 12px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 10px; }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-outline { border: 1px solid var(--primary); background: transparent; color: var(--primary); }
+        /* Dashboard Grid */
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; margin-top: 20px; }
+        .card { background: white; padding: 25px; border-radius: 10px; box-shadow: var(--shadow); text-align: center; border-bottom: 4px solid var(--accent); transition: transform 0.2s; }
+        .card:hover { transform: translateY(-3px); }
+        .card h3 { margin: 0 0 10px 0; font-size: 13px; color: #7f8c8d; text-transform: uppercase; letter-spacing: 1px; }
+        .card p { margin: 0; font-size: 24px; font-weight: 800; color: var(--primary); }
+
+        /* =========================================
+           PROFESSIONAL DATA ENTRY STYLES
+           ========================================= */
+        .entry-container { display: flex; flex-direction: column; gap: 20px; }
         
-        /* Spin Wheel Simple */
-        .wheel-container { width: 200px; height: 200px; background: conic-gradient(red 0deg 60deg, yellow 60deg 120deg, blue 120deg 180deg, green 180deg 240deg, purple 240deg 300deg, orange 300deg 360deg); border-radius: 50%; margin: 20px auto; position: relative; transition: transform 3s ease-out; }
-        .arrow { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 10px solid transparent; border-right: 10px solid transparent; border-top: 20px solid white; z-index: 10; }
+        .entry-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            padding: 25px;
+            border: 1px solid var(--border);
+        }
+
+        .entry-header {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--secondary);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Input Styling */
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-size: 12px; font-weight: 600; color: #666; margin-bottom: 6px; }
+        .form-group input { 
+            width: 100%; 
+            padding: 10px 12px; 
+            border: 1px solid #ccc; 
+            border-radius: 5px; 
+            font-size: 14px; 
+            transition: border 0.3s;
+            box-sizing: border-box; /* Fix width issues */
+        }
+        .form-group input:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.1); }
+        .form-group input[type="number"] { text-align: right; font-family: 'Courier New', Courier, monospace; font-weight: bold; }
+
+        /* Specific Grids */
+        .primary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .expense-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; }
+        .summary-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; background: #f8fcf9; padding: 20px; border-radius: 8px; border: 1px solid #e0e0e0; }
+
+        /* Summary Highlights */
+        .summary-item label { color: var(--primary); font-size: 13px; }
+        .summary-item input { font-size: 18px; font-weight: 800; color: var(--primary); border: 2px solid #ddd; }
+        #entry-net-buy { background-color: #e9ecef; color: #555; cursor: not-allowed; }
+        #entry-profit { color: var(--accent); border-color: var(--accent); }
+
+        /* Buttons */
+        .btn-primary { background-color: var(--primary); color: white; border: none; padding: 14px 25px; border-radius: 6px; cursor: pointer; width: 100%; font-size: 16px; font-weight: 600; transition: background 0.3s; box-shadow: 0 4px 6px rgba(44, 62, 80, 0.2); }
+        .btn-primary:hover { background-color: #34495e; box-shadow: 0 6px 8px rgba(44, 62, 80, 0.3); }
+
+        /* Tables */
+        .table-container { overflow-x: auto; background: white; padding: 0; border-radius: 8px; margin-top: 15px; box-shadow: var(--shadow); border: 1px solid var(--border); }
+        table { width: 100%; border-collapse: collapse; min-width: 1200px; font-size: 14px; }
+        th, td { border: 1px solid #eee; padding: 12px 8px; text-align: center; vertical-align: middle; }
+        th { background-color: var(--primary); color: white; font-weight: 600; text-transform: uppercase; font-size: 12px; border-bottom: none; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        tr:hover { background-color: #f1f1f1; }
         
-        /* Inputs */
-        input, select { width: 90%; padding: 10px; background: #333; border: 1px solid #555; color: white; border-radius: 5px; margin-bottom: 10px; }
+        td input { width: 90%; border: 1px solid transparent; background: transparent; text-align: center; font-family: inherit; font-size: 13px; padding: 4px; border-radius: 4px; }
+        td input:focus { border: 1px solid var(--accent); background: white; outline: none; }
         
-        .history-item { border-bottom: 1px solid #333; padding: 10px 0; display: flex; justify-content: space-between; font-size: 13px; }
-        .status-pending { color: orange; }
-        .status-approved { color: green; }
-        .status-rejected { color: red; }
+        .btn-delete { background-color: #ff6b6b; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        .btn-delete:hover { background-color: #c0392b; }
+
+        /* Search Bars */
+        .search-bar { background: white; padding: 15px; border-radius: 8px; display: flex; gap: 10px; align-items: center; margin-bottom: 15px; box-shadow: var(--shadow); }
+
+        /* =========================================
+           PRINT SETTINGS
+           ========================================= */
+        @media print {
+            @page { size: A4 landscape; margin: 5mm; }
+            body { background: white; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; zoom: 60%; }
+            nav, #auth-section, .no-print, .btn-delete, .search-bar, .btn-primary, .section-title button { display: none !important; }
+            .container { max-width: 100%; width: 100%; padding: 0; margin: 0; }
+            .section-title { border: none; margin: 5px 0; text-align: center; }
+            .table-container { box-shadow: none; overflow: visible; padding: 0; margin: 0; border: none; }
+            table { min-width: 100%; width: 100%; font-size: 11px; border-collapse: collapse; table-layout: fixed; }
+            th, td { border: 1px solid #000 !important; padding: 4px 2px !important; text-align: center; color: black !important; }
+            th { background-color: #f1c40f !important; color: black !important; }
+            td input { border: none; width: 100%; font-size: 11px; font-weight: 500; appearance: none; -webkit-appearance: none; color: black !important; }
+            tfoot { background-color: #ddd !important; }
+        }
+
+        @media (max-width: 768px) {
+            .primary-grid, .summary-grid { grid-template-columns: 1fr; }
+            .expense-grid { grid-template-columns: 1fr 1fr; }
+        }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <div id="username-display">User</div>
-        <div class="balance-box">$<span id="balance">0.000</span></div>
+<div id="auth-section">
+    <h2 style="color: var(--primary);">Daily Business Ledger</h2>
+    <div id="login-form">
+        <h3>লগইন করুন (Login)</h3>
+        <input type="email" id="login-email" placeholder="Email">
+        <input type="password" id="login-pass" placeholder="Password">
+        <button class="btn-primary" id="btn-login">Login</button>
+        <p style="margin-top:15px; font-size:13px; cursor:pointer; color:var(--primary); text-decoration: underline;" onclick="toggleAuth('register')">Create Account</p>
     </div>
-
-    <!-- HOME PAGE -->
-    <div id="home" class="page active">
-        <div class="card">
-            <h3><i class="fas fa-play-circle"></i> Watch Ads</h3>
-            <p>Earn money by watching video ads.</p>
-            <button class="btn btn-primary" onclick="watchAd()">Watch Ad</button>
-        </div>
-
-        <div class="card" style="text-align: center;">
-            <h3><i class="fas fa-dharmachakra"></i> Daily Spin</h3>
-            <div class="arrow"></div>
-            <div class="wheel-container" id="wheel"></div>
-            <button class="btn btn-primary" onclick="spinWheel()">Spin Now</button>
-            <p id="spin-limit-text" style="font-size: 12px; color: #777; margin-top: 5px;"></p>
-        </div>
+    <div id="register-form" class="hidden">
+        <h3>রেজিস্ট্রেশন করুন (Register)</h3>
+        <input type="email" id="reg-email" placeholder="Email">
+        <input type="password" id="reg-pass" placeholder="Password">
+        <button class="btn-primary" id="btn-register">Register</button>
+        <p style="margin-top:15px; font-size:13px; cursor:pointer; color:var(--primary); text-decoration: underline;" onclick="toggleAuth('login')">Back to Login</p>
     </div>
+</div>
 
-    <!-- GAMES PAGE -->
-    <div id="games" class="page">
-        <div class="card">
-            <h3><i class="fas fa-calculator"></i> Math Faucet</h3>
-            <div style="background: #333; padding: 20px; font-size: 24px; text-align: center; border-radius: 5px; margin: 10px 0;">
-                <span id="math-q">Loading...</span>
+<div id="app-section" class="hidden">
+    <nav>
+        <button onclick="showSection('dashboard')" class="active" id="nav-dash">Dashboard</button>
+        <button onclick="showSection('data-entry')" id="nav-entry">Data Entry</button>
+        <button onclick="showSection('file')" id="nav-file">File (Table)</button>
+        <button onclick="showSection('history')" id="nav-history">History</button>
+        <button onclick="handleLogout()" class="logout-btn">Logout</button>
+    </nav>
+
+    <div class="container">
+
+        <div id="dashboard" class="content-section">
+            <div class="section-title">
+                <h2>ড্যাশবোর্ড (Dashboard)</h2>
+                <div class="search-bar no-print" style="margin:0; padding:5px; box-shadow:none;">
+                    <input type="month" id="dash-month-picker" style="padding:5px;">
+                </div>
             </div>
-            <input type="number" id="math-a" placeholder="Enter Answer">
-            <button class="btn btn-primary" onclick="submitMath()">Submit Answer</button>
-        </div>
-    </div>
-
-    <!-- WALLET PAGE -->
-    <div id="wallet" class="page">
-        <div class="card">
-            <h3>Withdraw</h3>
-            <select id="withdraw-method">
-                <option value="FaucetPay">FaucetPay</option>
-                <option value="Cwallet">Cwallet</option>
-                <option value="TrustWallet">Trust Wallet</option>
-            </select>
-            <input type="number" id="withdraw-amount" placeholder="Amount (USD)">
-            <button class="btn btn-primary" onclick="withdraw()">Request Withdraw</button>
-        </div>
-        <div class="card">
-            <h3>Deposit USDT</h3>
-            <p style="font-size:12px; color:#aaa;">Send USDT to: <b id="admin-wallet" style="color:#fff; user-select: text;">Loading...</b></p>
-            <input type="number" id="deposit-amount" placeholder="Amount Sent">
-            <input type="text" id="deposit-proof" placeholder="Screenshot URL (e.g., imgbb.com)">
-            <button class="btn btn-outline" onclick="deposit()">Submit Deposit</button>
-        </div>
-    </div>
-
-    <!-- PROMOTE PAGE -->
-    <div id="promote" class="page">
-        <h3>Social Tasks</h3>
-        <div id="task-list">
-            <!-- Tasks load here -->
-        </div>
-    </div>
-
-    <!-- PROFILE PAGE -->
-    <div id="profile" class="page">
-        <div class="card">
-            <h3><i class="fas fa-user-cog"></i> Settings</h3>
-            <input type="text" id="set-faucetpay" placeholder="FaucetPay Email">
-            <input type="text" id="set-cwallet" placeholder="Cwallet UID">
-            <input type="text" id="set-trust" placeholder="Trust Wallet Address">
-            <button class="btn btn-primary" onclick="saveSettings()">Save Details</button>
-        </div>
-        
-        <div class="card">
-            <h3>Referral</h3>
-            <p>Share this link to earn:</p>
-            <input type="text" id="refer-link" readonly value="https://t.me/pepe_earningSA_bot?start=USERID">
-            <button class="btn btn-outline" onclick="copyRefer()">Copy Link</button>
+            <div class="dashboard-grid" id="dash-cards">
+                <!-- Cards injected via JS -->
+            </div>
         </div>
 
-        <div class="card">
-            <h3>History</h3>
-            <button class="btn btn-outline" onclick="loadHistory('withdraw')">Withdrawals</button>
-            <button class="btn btn-outline" onclick="loadHistory('deposit')">Deposits</button>
-            <button class="btn btn-outline" onclick="loadHistory('tasks')">Tasks</button>
-            <div id="history-list" style="margin-top: 15px;"></div>
-        </div>
-    </div>
-
-    <!-- Navigation Bar -->
-    <div class="nav">
-        <div class="nav-item active" onclick="nav('home')"><i class="fas fa-home"></i>Home</div>
-        <div class="nav-item" onclick="nav('games')"><i class="fas fa-gamepad"></i>Games</div>
-        <div class="nav-item" onclick="nav('wallet')"><i class="fas fa-wallet"></i>Wallet</div>
-        <div class="nav-item" onclick="nav('promote')"><i class="fas fa-bullhorn"></i>Promote</div>
-        <div class="nav-item" onclick="nav('profile')"><i class="fas fa-user"></i>Profile</div>
-    </div>
-
-    <script>
-        // --- CONFIGURATION ---
-        const firebaseConfig = {
-            apiKey: "AIzaSyAblvjeKU95KNpjzS08e_MHJWSEmJX8V0k",
-            authDomain: "earning-pepe.firebaseapp.com",
-            databaseURL: "https://earning-pepe-default-rtdb.firebaseio.com",
-            projectId: "earning-pepe",
-            storageBucket: "earning-pepe.firebasestorage.app",
-            messagingSenderId: "516597922287",
-            appId: "1:516597922287:web:3d8cd85b87f51c437bde1a"
-        };
-
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-
-        // Simulate Telegram User (In real app, get from Telegram WebApp.initData)
-        let userId = localStorage.getItem('pepe_user_id');
-        if(!userId) {
-            userId = 'user_' + Math.floor(Math.random() * 100000);
-            localStorage.setItem('pepe_user_id', userId);
-        }
-        let userData = {};
-        let appSettings = {};
-
-        // --- INIT ---
-        window.onload = function() {
-            document.getElementById('username-display').innerText = userId;
-            document.getElementById('refer-link').value = `https://t.me/pepe_earningSA_bot?start=${userId}`;
-            loadUserData();
-            loadSettings();
-            generateMath();
-            loadTasks();
-        };
-
-        // --- NAVIGATION ---
-        function nav(pageId) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            document.getElementById(pageId).classList.add('active');
-            // Update active nav style logic would go here
-        }
-
-        // --- FIREBASE LISTENERS ---
-        function loadUserData() {
-            db.ref('users/' + userId).on('value', (snapshot) => {
-                const data = snapshot.val();
-                if (data) {
-                    userData = data;
-                    document.getElementById('balance').innerText = (data.balance || 0).toFixed(4);
-                    
-                    if(data.isBanned) {
-                        Swal.fire('Banned', 'You have been banned.', 'error');
-                        document.body.innerHTML = '<h1 style="color:red;text-align:center;margin-top:50px;">BANNED</h1>';
-                    }
-
-                    // Fill profile inputs
-                    if(data.walletDetails) {
-                        document.getElementById('set-faucetpay').value = data.walletDetails.faucetpay || '';
-                        document.getElementById('set-cwallet').value = data.walletDetails.cwallet || '';
-                        document.getElementById('set-trust').value = data.walletDetails.trust || '';
-                    }
-                } else {
-                    // Create new user
-                    db.ref('users/' + userId).set({
-                        username: userId,
-                        balance: 0,
-                        status: 'active',
-                        joined: Date.now()
-                    });
-                }
-            });
-        }
-
-        function loadSettings() {
-            db.ref('settings').on('value', (snap) => {
-                appSettings = snap.val() || {};
-                document.getElementById('admin-wallet').innerText = appSettings.depositAddress || 'TRX...';
-                document.getElementById('spin-limit-text').innerText = `Limit: ${appSettings.dailySpinLimit || 10} per day`;
-            });
-        }
-
-        // --- HOME FUNCTIONS ---
-        function watchAd() {
-            if (typeof show_10233960 === 'function') {
-                show_10233960().then(() => {
-                    // Ad Closed/Finished logic (Simulated here as usually callback is complex without full sdk docs)
-                    giveReward('videoAdReward', 'Ad Watched');
-                });
-            } else {
-                // Fallback for testing/if adblock blocks script
-                Swal.fire('Ad Loading...', 'Simulating Ad Watch', 'info');
-                setTimeout(() => giveReward('videoAdReward', 'Ad Watched'), 3000);
-            }
-        }
-
-        function spinWheel() {
-            const limit = appSettings.dailySpinLimit || 10;
-            const today = new Date().toDateString();
+        <div id="data-entry" class="content-section hidden">
+            <div class="section-title">
+                <h2>ডাটা এন্ট্রি (Data Entry)</h2>
+            </div>
             
-            if(userData.lastSpinDate === today && userData.spinCount >= limit) {
-                return Swal.fire('Limit Reached', 'Come back tomorrow!', 'warning');
-            }
-
-            // Simple Animation
-            const wheel = document.getElementById('wheel');
-            const deg = Math.floor(5000 + Math.random() * 5000);
-            wheel.style.transform = `rotate(${deg}deg)`;
-
-            setTimeout(() => {
-                // Show Ad after spin
-                 if (typeof show_10233960 === 'function') { show_10233960(); }
-                 
-                // Reward
-                const reward = 0.001; // Example fixed reward or random
-                updateBalance(reward, 'Spin Reward');
-                
-                // Update Limits
-                let count = (userData.lastSpinDate === today) ? (userData.spinCount || 0) + 1 : 1;
-                db.ref('users/' + userId).update({
-                    spinCount: count,
-                    lastSpinDate: today
-                });
-                Swal.fire('You Won!', `$${reward}`, 'success');
-            }, 3000);
-        }
-
-        // --- GAMES FUNCTIONS ---
-        let currentMathAns = 0;
-        function generateMath() {
-            const a = Math.floor(Math.random() * 50);
-            const b = Math.floor(Math.random() * 50);
-            currentMathAns = a + b;
-            document.getElementById('math-q').innerText = `${a} + ${b} = ?`;
-            document.getElementById('math-a').value = '';
-        }
-
-        function submitMath() {
-            const input = parseInt(document.getElementById('math-a').value);
-            if(input === currentMathAns) {
-                // Show Ad
-                if (typeof show_10233960 === 'function') { show_10233960(); }
-                
-                giveReward('mathGameReward', 'Math Game');
-                generateMath();
-            } else {
-                Swal.fire('Wrong', 'Try again', 'error');
-            }
-        }
-
-        // --- WALLET FUNCTIONS ---
-        function withdraw() {
-            const amount = parseFloat(document.getElementById('withdraw-amount').value);
-            const method = document.getElementById('withdraw-method').value;
-            const min = parseFloat(appSettings.minWithdraw || 0.5);
-
-            if(amount < min) return Swal.fire('Error', `Min withdraw is $${min}`, 'error');
-            if(amount > userData.balance) return Swal.fire('Error', 'Insufficient balance', 'error');
-
-            // Get address based on method
-            let address = '';
-            if(userData.walletDetails) {
-                if(method === 'FaucetPay') address = userData.walletDetails.faucetpay;
-                else if(method === 'Cwallet') address = userData.walletDetails.cwallet;
-                else if(method === 'TrustWallet') address = userData.walletDetails.trust;
-            }
-
-            if(!address) return Swal.fire('Error', 'Please set wallet details in Profile', 'error');
-
-            // Deduct balance first
-            db.ref('users/' + userId).update({ balance: userData.balance - amount });
-
-            // Create Record
-            db.ref('withdrawals').push({
-                userId: userId,
-                method: method,
-                address: address,
-                amount: amount,
-                status: 'pending',
-                date: Date.now()
-            });
-
-            Swal.fire('Success', 'Withdrawal requested!', 'success');
-        }
-
-        function deposit() {
-            const amount = parseFloat(document.getElementById('deposit-amount').value);
-            const proof = document.getElementById('deposit-proof').value;
-
-            if(!amount || !proof) return Swal.fire('Error', 'Fill all fields', 'error');
-
-            db.ref('deposits').push({
-                userId: userId,
-                amount: amount,
-                proof: proof,
-                status: 'pending',
-                date: Date.now()
-            });
-            Swal.fire('Success', 'Deposit submitted for review', 'success');
-        }
-
-        // --- PROMOTE FUNCTIONS ---
-        function loadTasks() {
-            db.ref('tasks').on('value', (snap) => {
-                const list = document.getElementById('task-list');
-                list.innerHTML = '';
-                const tasks = snap.val();
-                if(tasks) {
-                    Object.keys(tasks).forEach(key => {
-                        const t = tasks[key];
-                        const div = document.createElement('div');
-                        div.className = 'card';
-                        div.innerHTML = `
-                            <h4>${t.name}</h4>
-                            <p>Reward: $${t.reward}</p>
-                            <a href="${t.url}" target="_blank" class="btn btn-outline" style="text-align:center; display:block; text-decoration:none;">Go to Task</a>
-                            <input type="text" id="proof-${key}" placeholder="Screenshot URL" style="margin-top:10px;">
-                            <button class="btn btn-primary" onclick="submitTask('${key}', ${t.reward})">Submit Proof</button>
-                        `;
-                        list.appendChild(div);
-                    });
-                } else {
-                    list.innerHTML = '<p>No tasks available.</p>';
-                }
-            });
-        }
-
-        function submitTask(taskId, reward) {
-            const proof = document.getElementById(`proof-${taskId}`).value;
-            if(!proof) return Swal.fire('Error', 'Enter proof URL', 'error');
-
-            db.ref('task_submissions').push({
-                taskId: taskId,
-                userId: userId,
-                proof: proof,
-                reward: reward, // Store intended reward
-                status: 'pending',
-                date: Date.now()
-            });
-            Swal.fire('Submitted', 'Admin will review shortly', 'success');
-        }
-
-        // --- PROFILE FUNCTIONS ---
-        function saveSettings() {
-            db.ref('users/' + userId + '/wallet_details').set({
-                faucetpay: document.getElementById('set-faucetpay').value,
-                cwallet: document.getElementById('set-cwallet').value,
-                trust: document.getElementById('set-trust').value
-            });
-            Swal.fire('Saved', 'Details updated', 'success');
-        }
-
-        function copyRefer() {
-            const copyText = document.getElementById("refer-link");
-            copyText.select();
-            document.execCommand("copy");
-            Swal.fire('Copied', 'Link copied to clipboard', 'success');
-        }
-
-        function loadHistory(type) {
-            const container = document.getElementById('history-list');
-            container.innerHTML = 'Loading...';
-            
-            let refPath = '';
-            if(type === 'withdraw') refPath = 'withdrawals';
-            if(type === 'deposit') refPath = 'deposits';
-            if(type === 'tasks') refPath = 'task_submissions';
-
-            // Simple query (client-side filter is slow for large apps, but okay for mini apps)
-            db.ref(refPath).orderByChild('userId').equalTo(userId).once('value', (snap) => {
-                container.innerHTML = '';
-                const data = snap.val();
-                if(!data) {
-                    container.innerHTML = 'No history found.'; 
-                    return;
-                }
-                
-                Object.values(data).forEach(item => {
-                    let text = `$${item.amount || item.reward} - ${item.status}`;
-                    container.innerHTML += `
-                        <div class="history-item">
-                            <span>${new Date(item.date).toLocaleDateString()}</span>
-                            <span class="status-${item.status}">${text}</span>
+            <div class="entry-container">
+                <!-- Section 1: Core Information -->
+                <div class="entry-card">
+                    <div class="entry-header">প্রাথমিক তথ্য (Primary Info)</div>
+                    <div class="primary-grid">
+                        <div class="form-group">
+                            <label>তারিখ (Date)</label>
+                            <input type="date" id="entry-date">
                         </div>
-                    `;
-                });
+                        <div class="form-group">
+                            <label>মোট ক্রয় (Total Buy)</label>
+                            <input type="number" id="entry-total-buy" placeholder="0.00" oninput="calculateNetBuy()" style="border-color: #3498db;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2: Expense Breakdown -->
+                <div class="entry-card">
+                    <div class="entry-header">খরচের বিবরণ (Expenses Breakdown)</div>
+                    <div class="expense-grid">
+                        <div class="form-group"><label>সাইফুল ভাই (Saiful)</label><input type="number" class="expense-input" id="exp-saiful" placeholder="0" oninput="calculateNetBuy()"></div>
+                        <div class="form-group"><label>হৃদয় (Hridoy)</label><input type="number" class="expense-input" id="exp-hridoy" placeholder="0" oninput="calculateNetBuy()"></div>
+                        <div class="form-group"><label>রবিন (Robin)</label><input type="number" class="expense-input" id="exp-robin" placeholder="0" oninput="calculateNetBuy()"></div>
+                        <div class="form-group"><label>ফাহাদ ভাই (Fahad)</label><input type="number" class="expense-input" id="exp-fahad" placeholder="0" oninput="calculateNetBuy()"></div>
+                        <div class="form-group"><label>হোসাইন (Hossain)</label><input type="number" class="expense-input" id="exp-hossain" placeholder="0" oninput="calculateNetBuy()"></div>
+                        <div class="form-group"><label>ভাত ও নাস্তা (Food)</label><input type="number" class="expense-input" id="exp-food" placeholder="0" oninput="calculateNetBuy()"></div>
+                        <div class="form-group"><label>বাসা বাজার (Home)</label><input type="number" class="expense-input" id="exp-home" placeholder="0" oninput="calculateNetBuy()"></div>
+                        <div class="form-group"><label>মসজিদ ও দান (Donation)</label><input type="number" class="expense-input" id="exp-donation" placeholder="0" oninput="calculateNetBuy()"></div>
+                        <div class="form-group"><label>দোকান খরচ (Shop)</label><input type="number" class="expense-input" id="exp-shop" placeholder="0" oninput="calculateNetBuy()"></div>
+                        <div class="form-group"><label>সিকিউরিটি (Security)</label><input type="number" class="expense-input" id="exp-security" placeholder="0" oninput="calculateNetBuy()"></div>
+                        <div class="form-group"><label>বাসা ভাড়া (Rent)</label><input type="number" class="expense-input" id="exp-rent" placeholder="0" oninput="calculateNetBuy()"></div>
+                        <div class="form-group"><label>ডাটা (Data)</label><input type="number" class="expense-input" id="exp-data" placeholder="0" oninput="calculateNetBuy()"></div>
+                        <div class="form-group"><label>পুলিশ (Police)</label><input type="number" class="expense-input" id="exp-police" placeholder="0" oninput="calculateNetBuy()"></div>
+                    </div>
+                </div>
+
+                <!-- Section 3: Calculations & Submit -->
+                <div class="entry-card" style="border-top: 4px solid var(--accent);">
+                    <div class="entry-header">হিসাব বিবরণী (Summary)</div>
+                    <div class="summary-grid">
+                        <div class="form-group summary-item">
+                            <label>✅ মোট ক্রয় (Net Buy)</label>
+                            <input type="number" id="entry-net-buy" readonly tabindex="-1">
+                        </div>
+                        <div class="form-group summary-item">
+                            <label>💰 বিক্রয় (Sell)</label>
+                            <input type="number" id="entry-sell" placeholder="0">
+                        </div>
+                        <div class="form-group summary-item">
+                            <label>📈 লাভ (Profit)</label>
+                            <input type="number" id="entry-profit" placeholder="0">
+                        </div>
+                    </div>
+                    <div style="margin-top: 20px;">
+                        <button class="btn-primary" onclick="saveToFirebase()">💾 Save Daily Record</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="file" class="content-section hidden">
+            <div class="section-title">
+                <h2>ফাইল / টেবিল (File View)</h2>
+                <button class="no-print" onclick="window.print()" style="padding:8px 20px; cursor:pointer; background:#2c3e50; color:white; border:none; border-radius:4px;">🖨️ Print A4</button>
+            </div>
+            <div class="search-bar no-print">
+                <label>Filter Month:</label>
+                <input type="month" id="file-month-picker" style="padding:8px; border:1px solid #ccc; border-radius:4px;">
+                <button onclick="loadFileTable()" style="padding:8px 15px; background:var(--primary); color:white; border:none; border-radius:4px; cursor:pointer;">Search</button>
+            </div>
+            <div class="table-container">
+                <table id="file-table">
+                    <thead><!-- JS generated --></thead>
+                    <tbody><!-- JS generated --></tbody>
+                    <tfoot id="file-table-foot"><!-- JS generated --></tfoot>
+                </table>
+            </div>
+        </div>
+
+        <div id="history" class="content-section hidden">
+            <div class="section-title">
+                <h2>বাৎসরিক ইতিহাস (Yearly History)</h2>
+                <button class="no-print" onclick="window.print()" style="padding:8px 20px; cursor:pointer; background:#2c3e50; color:white; border:none; border-radius:4px;">🖨️ Print</button>
+            </div>
+            <div class="search-bar no-print">
+                <label>Select Year:</label>
+                <input type="number" id="history-year-picker" min="2000" max="2100" style="padding:8px; border:1px solid #ccc; border-radius:4px;">
+                <button onclick="loadHistory()" style="padding:8px 15px; background:var(--primary); color:white; border:none; border-radius:4px; cursor:pointer;">Search</button>
+            </div>
+            <div class="table-container">
+                <table id="history-table">
+                    <thead><!-- JS generated --></thead>
+                    <tbody><!-- JS generated --></tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, push, onValue, update, remove, query, orderByChild } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+    // --- FIREBASE CONFIGURATION ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyBK_4SMPXDx9PmM6CyriUSgqx32Tz_ubiQ",
+        authDomain: "saiful-cellphone.firebaseapp.com",
+        databaseURL: "https://saiful-cellphone-default-rtdb.firebaseio.com",
+        projectId: "saiful-cellphone",
+        storageBucket: "saiful-cellphone.firebasestorage.app",
+        messagingSenderId: "659061737398",
+        appId: "1:659061737398:web:92710484b6de6cf0dfe317"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const auth = getAuth(app);
+
+    // Global State
+    let currentUser = null;
+    let allData = [];
+    
+    // Field Mapping
+    const fields = {
+        date: { label: 'তারিখ', type: 'date' },
+        totalBuy: { label: 'মোট ক্রয়', type: 'number' },
+        netBuy: { label: 'ক্রয়', type: 'calc' }, 
+        sell: { label: 'বিক্রয়', type: 'number' },
+        profit: { label: 'লাভ', type: 'number' },
+        saiful: { label: 'সাইফুল ভাই', type: 'number', isExp: true },
+        hridoy: { label: 'হৃদয়', type: 'number', isExp: true },
+        robin: { label: 'রবিন', type: 'number', isExp: true },
+        fahad: { label: 'ফাহাদ ভাই', type: 'number', isExp: true },
+        hossain: { label: 'হোসাইন', type: 'number', isExp: true },
+        food: { label: 'ভাত ও নাস্তা', type: 'number', isExp: true },
+        home: { label: 'বাসা বাজার', type: 'number', isExp: true },
+        donation: { label: 'মসজিদ ও দান', type: 'number', isExp: true },
+        shopCost: { label: 'দোকান খরচ', type: 'number', isExp: true },
+        security: { label: 'সিকিউরিটি', type: 'number', isExp: true },
+        rent: { label: 'বাসা ভাড়া', type: 'number', isExp: true },
+        data: { label: 'ডাটা খরচ', type: 'number', isExp: true },
+        police: { label: 'পুলিশ', type: 'number', isExp: true }
+    };
+
+    // --- AUTH LOGIC ---
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            currentUser = user;
+            document.getElementById('auth-section').classList.add('hidden');
+            document.getElementById('app-section').classList.remove('hidden');
+            initApp();
+        } else {
+            currentUser = null;
+            document.getElementById('auth-section').classList.remove('hidden');
+            document.getElementById('app-section').classList.add('hidden');
+        }
+    });
+
+    window.toggleAuth = (mode) => {
+        if(mode === 'register') {
+            document.getElementById('login-form').classList.add('hidden');
+            document.getElementById('register-form').classList.remove('hidden');
+        } else {
+            document.getElementById('login-form').classList.remove('hidden');
+            document.getElementById('register-form').classList.add('hidden');
+        }
+    };
+
+    document.getElementById('btn-login').addEventListener('click', () => {
+        const e = document.getElementById('login-email').value;
+        const p = document.getElementById('login-pass').value;
+        signInWithEmailAndPassword(auth, e, p).catch(err => alert(err.message));
+    });
+
+    document.getElementById('btn-register').addEventListener('click', () => {
+        const e = document.getElementById('reg-email').value;
+        const p = document.getElementById('reg-pass').value;
+        createUserWithEmailAndPassword(auth, e, p).catch(err => alert(err.message));
+    });
+
+    window.handleLogout = () => signOut(auth);
+
+    // --- NAVIGATION ---
+    window.showSection = (id) => {
+        document.querySelectorAll('.content-section').forEach(el => el.classList.add('hidden'));
+        document.getElementById(id).classList.remove('hidden');
+        
+        document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+        document.getElementById('nav-'+ (id === 'data-entry' ? 'entry' : id)).classList.add('active');
+
+        if(id === 'dashboard') loadDashboard();
+        if(id === 'file') loadFileTable();
+        if(id === 'history') loadHistory();
+    };
+
+    // --- APP INITIALIZATION ---
+    function initApp() {
+        const today = new Date().toISOString().split('T')[0];
+        const currentMonth = today.slice(0, 7);
+        document.getElementById('entry-date').value = today;
+        document.getElementById('dash-month-picker').value = currentMonth;
+        document.getElementById('file-month-picker').value = currentMonth;
+        document.getElementById('history-year-picker').value = new Date().getFullYear();
+
+        const dataRef = ref(db, 'ledger_data');
+        onValue(dataRef, (snapshot) => {
+            const data = snapshot.val();
+            allData = data ? Object.entries(data).map(([key, val]) => ({id: key, ...val})) : [];
+            
+            const activeSection = document.querySelector('.content-section:not(.hidden)').id;
+            if(activeSection === 'dashboard') loadDashboard();
+            if(activeSection === 'file') loadFileTable();
+            if(activeSection === 'history') loadHistory();
+        });
+    }
+
+    // --- DATA ENTRY LOGIC ---
+    window.calculateNetBuy = () => {
+        const totalBuy = parseFloat(document.getElementById('entry-total-buy').value) || 0;
+        let totalExp = 0;
+        document.querySelectorAll('.expense-input').forEach(inp => {
+            totalExp += parseFloat(inp.value) || 0;
+        });
+        document.getElementById('entry-net-buy').value = totalBuy - totalExp;
+    };
+
+    window.saveToFirebase = () => {
+        const date = document.getElementById('entry-date').value;
+        if(!date) return alert("Please select a date");
+
+        const entry = { date };
+        Object.keys(fields).forEach(key => {
+            if(key !== 'date') {
+                let val = 0;
+                let htmlId = '';
+                
+                if (key === 'totalBuy') htmlId = 'entry-total-buy';
+                else if (key === 'netBuy') htmlId = 'entry-net-buy';
+                else if (key === 'sell') htmlId = 'entry-sell';
+                else if (key === 'profit') htmlId = 'entry-profit';
+                else if (key === 'shopCost') htmlId = 'exp-shop'; 
+                else htmlId = 'exp-' + key; 
+
+                const el = document.getElementById(htmlId);
+                if(el) val = el.value;
+                
+                entry[key] = parseFloat(val) || 0;
+            }
+        });
+
+        push(ref(db, 'ledger_data'), entry)
+            .then(() => {
+                alert("✅ Record Saved Successfully!");
+                document.querySelectorAll('.entry-container input[type="number"]').forEach(i => i.value = '');
+                document.getElementById('entry-date').value = date;
+            })
+            .catch(err => alert("Error: " + err.message));
+    };
+
+    // --- DASHBOARD LOGIC ---
+    window.loadDashboard = () => {
+        const selectedMonth = document.getElementById('dash-month-picker').value; 
+        const container = document.getElementById('dash-cards');
+        container.innerHTML = '';
+
+        const monthlyData = allData.filter(d => d.date.startsWith(selectedMonth));
+        const totals = {};
+        Object.keys(fields).forEach(k => {
+            if(fields[k].type !== 'date') totals[k] = 0;
+        });
+
+        monthlyData.forEach(row => {
+            Object.keys(totals).forEach(key => {
+                totals[key] += (parseFloat(row[key]) || 0);
             });
-        }
+        });
 
-        // --- UTILS ---
-        function giveReward(settingKey, reason) {
-            const amount = parseFloat(appSettings[settingKey] || 0.001);
-            updateBalance(amount, reason);
-            Swal.fire('Reward', `You earned $${amount}`, 'success');
-        }
+        Object.keys(fields).forEach(key => {
+            if(key === 'date') return;
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.innerHTML = `<h3>${fields[key].label}</h3><p>${totals[key].toLocaleString('en-US')}</p>`;
+            container.appendChild(card);
+        });
+        
+        document.getElementById('dash-month-picker').onchange = loadDashboard;
+    };
 
-        function updateBalance(amount, type) {
-            const newBal = (parseFloat(userData.balance) || 0) + amount;
-            db.ref('users/' + userId).update({ balance: newBal });
-            // Optional: Add to transaction log
-            db.ref('transactions').push({
-                userId: userId,
-                amount: amount,
-                type: type,
-                date: Date.now()
+    // --- FILE TABLE LOGIC ---
+    window.loadFileTable = () => {
+        const selectedMonth = document.getElementById('file-month-picker').value;
+        const tableHead = document.querySelector('#file-table thead');
+        const tableBody = document.querySelector('#file-table tbody');
+        const tableFoot = document.querySelector('#file-table-foot');
+
+        const monthlyData = allData.filter(d => d.date.startsWith(selectedMonth));
+        monthlyData.sort((a,b) => new Date(a.date) - new Date(b.date));
+
+        // Header
+        let headerHTML = '<tr>';
+        Object.keys(fields).forEach(key => {
+            headerHTML += `<th>${fields[key].label}</th>`;
+        });
+        headerHTML += '<th class="no-print">Action</th></tr>';
+        tableHead.innerHTML = headerHTML;
+
+        // Body
+        let bodyHTML = '';
+        monthlyData.forEach(row => {
+            bodyHTML += `<tr data-id="${row.id}">`;
+            Object.keys(fields).forEach(key => {
+                const val = row[key];
+                if(key === 'netBuy') {
+                    bodyHTML += `<td style="font-weight:bold;"><span id="net-${row.id}">${val}</span></td>`; 
+                } else if (key === 'date') {
+                    bodyHTML += `<td><input type="date" value="${val}" onchange="updateRow('${row.id}', '${key}', this.value)"></td>`;
+                } else {
+                    bodyHTML += `<td><input type="number" value="${val}" onchange="updateRow('${row.id}', '${key}', this.value)"></td>`;
+                }
             });
-        }
+            bodyHTML += `<td class="no-print"><button class="btn-delete" onclick="deleteRow('${row.id}')">Delete</button></td>`;
+            bodyHTML += '</tr>';
+        });
+        tableBody.innerHTML = bodyHTML;
 
-    </script>
+        // Footer
+        let footHTML = '<tr>';
+        Object.keys(fields).forEach(key => {
+            if(fields[key].type === 'date') {
+                footHTML += `<td>TOTAL</td>`;
+            } else {
+                const sum = monthlyData.reduce((acc, curr) => acc + (parseFloat(curr[key])||0), 0);
+                footHTML += `<td>${sum.toLocaleString('en-US')}</td>`;
+            }
+        });
+        footHTML += '<td class="no-print"></td></tr>';
+        tableFoot.innerHTML = footHTML;
+    };
+
+    window.updateRow = (id, key, value) => {
+        const updates = {};
+        updates[`ledger_data/${id}/${key}`] = key === 'date' ? value : parseFloat(value);
+        
+        update(ref(db), updates).then(() => {
+            const rowData = allData.find(d => d.id === id);
+            if(rowData) {
+                rowData[key] = parseFloat(value);
+                let totalExp = 0;
+                Object.keys(fields).filter(k => fields[k].isExp).forEach(k => totalExp += (parseFloat(rowData[k]) || 0));
+                const newNet = (parseFloat(rowData.totalBuy) || 0) - totalExp;
+                update(ref(db), { [`ledger_data/${id}/netBuy`]: newNet });
+            }
+        });
+    };
+
+    window.deleteRow = (id) => {
+        if(confirm("Are you sure you want to delete this record?")) {
+            remove(ref(db, `ledger_data/${id}`));
+        }
+    };
+
+    // --- HISTORY LOGIC ---
+    window.loadHistory = () => {
+        const year = document.getElementById('history-year-picker').value;
+        const tableHead = document.querySelector('#history-table thead');
+        const tableBody = document.querySelector('#history-table tbody');
+
+        let headerHTML = '<tr><th>Month</th>';
+        const numericKeys = Object.keys(fields).filter(k => fields[k].type !== 'date');
+        numericKeys.forEach(k => headerHTML += `<th>${fields[k].label}</th>`);
+        headerHTML += '</tr>';
+        tableHead.innerHTML = headerHTML;
+
+        const yearData = allData.filter(d => d.date.startsWith(year));
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        
+        let bodyHTML = '';
+        
+        monthNames.forEach((mName, index) => {
+            const mNum = String(index + 1).padStart(2, '0');
+            const monthData = yearData.filter(d => d.date.startsWith(`${year}-${mNum}`));
+            
+            bodyHTML += `<tr><td style="font-weight:bold; background:#fafafa;">${mName}</td>`;
+            
+            numericKeys.forEach(key => {
+                const sum = monthData.reduce((acc, curr) => acc + (parseFloat(curr[key])||0), 0);
+                bodyHTML += `<td>${sum.toLocaleString('en-US')}</td>`;
+            });
+            bodyHTML += '</tr>';
+        });
+        
+        bodyHTML += `<tr style="background:var(--header-bg); font-weight:bold;"><td>TOTAL</td>`;
+        numericKeys.forEach(key => {
+            const sum = yearData.reduce((acc, curr) => acc + (parseFloat(curr[key])||0), 0);
+            bodyHTML += `<td>${sum.toLocaleString('en-US')}</td>`;
+        });
+        bodyHTML += '</tr>';
+
+        tableBody.innerHTML = bodyHTML;
+    };
+
+</script>
+
 </body>
 </html>
